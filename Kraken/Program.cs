@@ -11,7 +11,7 @@ namespace Kraken
         public string WordListPath { get; set; } = String.Empty;
 
         [Option('p', "proxies", HelpText = "Path of the proxies file")]
-        public string ProxiesPath { get; set; } = String.Empty;
+        public string[] ProxiesPath { get; set; } = Array.Empty<string>();
 
         [Option('c', "config", Required = true, HelpText = "Path of the config file")]
         public string ConfigPath { get; set; } = String.Empty;

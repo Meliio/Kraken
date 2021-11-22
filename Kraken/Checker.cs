@@ -18,6 +18,7 @@ namespace Kraken
         private readonly KrakenSettings _krakenSettings;
         private readonly Record _record;
         private readonly ReaderWriterLock _readerWriterLock;
+        private readonly List<CheckerOutput> _outputs;
 
         public Checker(IEnumerable<Combo> combos, HttpClientManager httpClientManager, ConfigSettings configSettings, IEnumerable<Block> blocks, int threads, KrakenSettings krakenSettings, Record record)
         {
@@ -30,6 +31,7 @@ namespace Kraken
             _krakenSettings = krakenSettings;
             _record = record;
             _readerWriterLock = new ReaderWriterLock();
+            _outputs = new List<CheckerOutput>();
         }
 
         public async Task StartAsync()
@@ -119,6 +121,8 @@ namespace Kraken
                     }
                 }
 
+                _outputs.Add(new CheckerOutput());
+
                 Stats.IncrementChecked();
             });
         }
@@ -159,10 +163,21 @@ namespace Kraken
         {
             while (true)
             {
-                int checkedBefore = Stats.Checked;
-                await Task.Delay(3000);
-                int checkedAfter = Stats.Checked;
-                Stats.Cpm = (checkedAfter - checkedBefore) * 20;
+                var cpm = 0;
+
+                foreach (var output in _outputs.OrderByDescending(x => x.DateTime))
+                {
+                    if ((DateTime.Now - output.DateTime).TotalSeconds > 60)
+                    {
+                        break;
+                    }
+
+                    cpm++;
+                }
+
+                Stats.Cpm = cpm;
+
+                await Task.Delay(100);
             }
         }
     }

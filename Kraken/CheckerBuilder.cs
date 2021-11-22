@@ -11,12 +11,12 @@ namespace Kraken
     public class CheckerBuilder
     {
         private readonly string _wordListPath;
-        private readonly string _proxiesPath;
+        private readonly string[] _proxiesPath;
         private readonly string _configPath;
         private readonly int _threads;
         private readonly Dictionary<string, Func<string, Block>> _buildBlockFunctions;
 
-        public CheckerBuilder(string wordListPath, string proxiesPath, string configPath, int threads)
+        public CheckerBuilder(string wordListPath, string[] proxiesPath, string configPath, int threads)
         {
             _wordListPath = wordListPath;
             _proxiesPath = proxiesPath;
@@ -34,7 +34,7 @@ namespace Kraken
         {
             var combos = File.ReadAllLines(_wordListPath).Select(w => new Combo(w)).Where(c => c.IsValid);
 
-            var httpClientManager = string.IsNullOrEmpty(_proxiesPath) ? new HttpClientManager() : new HttpClientManager(_proxiesPath);
+            var httpClientManager = (_proxiesPath.Any()) ? new HttpClientManager(_proxiesPath) : new HttpClientManager();
 
             var stringReader = new StringReader(File.ReadAllText(_configPath));          
 

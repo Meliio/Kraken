@@ -1,5 +1,6 @@
 ﻿using Kraken.Models;
 using System.Net;
+using Yove.Proxy;
 
 namespace Kraken
 {
@@ -25,9 +26,9 @@ namespace Kraken
             _random = new Random();
         }
 
-        public HttpClientManager(string proxiesPath)
+        public HttpClientManager(string[] proxiesPath)
         {
-            var proxies = File.ReadAllLines(proxiesPath).Select(p => new Proxy(p));
+            var proxies = File.ReadAllLines(proxiesPath[0]).Select(p => BuildProxyClient(p, Enum.TryParse<ProxyType>(proxiesPath[1], true, out var proxyType) ? proxyType : ProxyType.Http));
 
             var httpClientHandlers = proxies.Select(p => new HttpClientHandler()
             {
@@ -54,6 +55,20 @@ namespace Kraken
             _customHttpClients.ForEach(h => h.IsValid = true);
 
             return _customHttpClients[_random.Next(_customHttpClients.Count)];
+        }
+
+        private static ProxyClient BuildProxyClient(string proxy, ProxyType proxyType)
+        {
+            var proxySplit = proxy.Split(':');
+
+            var proxyClient = new ProxyClient(proxySplit[0], int.Parse(proxySplit[1]), proxyType);
+
+            if (proxySplit.Length == 4)
+            {
+                proxyClient.Credentials = new NetworkCredential(proxySplit[2], proxySplit[3]);
+            }
+
+            return proxyClient;
         }
     }
 }
