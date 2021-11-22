@@ -32,8 +32,8 @@ namespace Kraken
 
         public Checker Build()
         {
-            var combos = File.ReadAllLines(_wordListPath).Select(w => new Combo(w)).Where(c => c.IsValid);
-
+            var botInputs = File.ReadAllLines(_wordListPath).Select(w => new BotInput(w));
+            
             var httpClientManager = (_proxiesPath.Any()) ? new HttpClientManager(_proxiesPath) : new HttpClientManager();
 
             var stringReader = new StringReader(File.ReadAllText(_configPath));          
@@ -65,7 +65,7 @@ namespace Kraken
 
             Console.OutputEncoding = Encoding.UTF8;
 
-            return new Checker(combos, httpClientManager, configSettings, blocks, _threads, krakenSettings, record);
+            return new Checker(botInputs, httpClientManager, configSettings, blocks, _threads, krakenSettings, record);
         }
 
         private IEnumerable<Block> BuildBlocks(JToken token)

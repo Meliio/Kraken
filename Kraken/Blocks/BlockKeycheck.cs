@@ -1,6 +1,7 @@
 ﻿using Kraken.Enums;
 using Kraken.Models;
 using Kraken.Models.Blocks;
+using System.Text.RegularExpressions;
 
 namespace Kraken.Blocks
 {
@@ -16,7 +17,8 @@ namespace Kraken.Blocks
             _keyConditionFunctions = new Dictionary<string, Func<string, string, bool>>()
             {
                 { "equals", Equals },
-                { "contains", Contains }
+                { "contains", Contains },
+                { "regex", RegexMatch }
             };
             _keychainConditionFunctions = new Dictionary<string, Func<IEnumerable<bool>, bool>>(StringComparer.OrdinalIgnoreCase)
             {
@@ -51,6 +53,8 @@ namespace Kraken.Blocks
         private static bool Equals(string value, string part) => value.Equals(part);
 
         private static bool Contains(string value, string part) => part.Contains(value);
+
+        private static bool RegexMatch(string value, string part) => Regex.IsMatch(part, value);
 
         private bool Any(IEnumerable<bool> items) => items.Any(i => i);
 

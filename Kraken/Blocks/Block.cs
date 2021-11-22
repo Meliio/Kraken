@@ -13,7 +13,7 @@ namespace Kraken.Blocks
             _regex = new Regex("<([^<>]+)>", RegexOptions.Compiled);
             _replaceFunctions = new Dictionary<string, Func<string, Match, BotData, string>>(StringComparer.OrdinalIgnoreCase)
             {
-                { "combo", ReplaceWithCombo },
+                { "input", ReplaceWithInput },
                 { "combo.username", ReplaceWithComboUsername },
                 { "combo.password", ReplaceWithComboPassword }
             };
@@ -30,11 +30,12 @@ namespace Kraken.Blocks
 
             return input;
         }
-        private string ReplaceWithCombo(string input, Match match, BotData botData) => input.Replace(match.Value, botData.Combo.ToString());
 
-        private string ReplaceWithComboUsername(string input, Match match, BotData botData) => input.Replace(match.Value, botData.Combo.Username);
+        private string ReplaceWithInput(string input, Match match, BotData botData) => input.Replace(match.Value, botData.Input.ToString());
 
-        private string ReplaceWithComboPassword(string input, Match match, BotData botData) => input.Replace(match.Value, botData.Combo.Password);
+        private string ReplaceWithComboUsername(string input, Match match, BotData botData) => input.Replace(match.Value, botData.Input.Combo.Username);
+
+        private string ReplaceWithComboPassword(string input, Match match, BotData botData) => input.Replace(match.Value, botData.Input.Combo.Password);
 
         private static string ReplaceWithVariableValue(string input, Match match, BotData botData) => botData.Variables.TryGetValue(match.Groups[1].Value, out var value) ? input.Replace(match.Value, value) : input; 
     }

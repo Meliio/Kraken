@@ -10,7 +10,7 @@ namespace Kraken
     {
         public CheckerStats Stats { get; }
 
-        private readonly IEnumerable<Combo> _combos;
+        private readonly IEnumerable<BotInput> _botInputs;
         private readonly HttpClientManager _httpClientManager;
         private readonly ConfigSettings _configSettings;
         private readonly IEnumerable<Block> _blocks;
@@ -20,10 +20,10 @@ namespace Kraken
         private readonly ReaderWriterLock _readerWriterLock;
         private readonly List<CheckerOutput> _outputs;
 
-        public Checker(IEnumerable<Combo> combos, HttpClientManager httpClientManager, ConfigSettings configSettings, IEnumerable<Block> blocks, int threads, KrakenSettings krakenSettings, Record record)
+        public Checker(IEnumerable<BotInput> botInputs, HttpClientManager httpClientManager, ConfigSettings configSettings, IEnumerable<Block> blocks, int threads, KrakenSettings krakenSettings, Record record)
         {
-            Stats = new CheckerStats(combos.Count(), record.Progress);
-            _combos = combos;
+            Stats = new CheckerStats(botInputs.Count(), record.Progress);
+            _botInputs = botInputs;
             _httpClientManager = httpClientManager;
             _configSettings = configSettings;
             _blocks = blocks;
@@ -45,7 +45,7 @@ namespace Kraken
                 MaxDegreeOfParallelism = _threads
             };
 
-            await Parallel.ForEachAsync(_combos.Skip(_record.Progress), options, async (combo, _) =>
+            await Parallel.ForEachAsync(_botInputs.Skip(_record.Progress), options, async (botInput, _) =>
             {
                 BotData botData = null;
 
@@ -53,7 +53,7 @@ namespace Kraken
                 {
                     var customHttpClient = _httpClientManager.GetRandomCustomHttpClient();
 
-                    botData = new BotData(combo, customHttpClient);
+                    botData = new BotData(botInput, customHttpClient);
 
                     foreach (var block in _blocks)
                     {
@@ -127,7 +127,7 @@ namespace Kraken
             });
         }
 
-        private string OutputBuilder(BotData botData) => botData.Captures.Any() ? new StringBuilder().Append(botData.Combo).Append(_krakenSettings.OutputSeparator).AppendJoin(_krakenSettings.OutputSeparator, botData.Captures.Select(c => $"{c.Key} = {c.Value}")).ToString() : botData.Combo.ToString();
+        private string OutputBuilder(BotData botData) => botData.Captures.Any() ? new StringBuilder().Append(botData.Input.ToString()).Append(_krakenSettings.OutputSeparator).AppendJoin(_krakenSettings.OutputSeparator, botData.Captures.Select(c => $"{c.Key} = {c.Value}")).ToString() : botData.Input.ToString();
 
         private async Task AppendOutputToFileAsync(string path, string content)
         {
