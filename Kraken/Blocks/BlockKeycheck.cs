@@ -17,7 +17,9 @@ namespace Kraken.Blocks
             _keyConditionFunctions = new Dictionary<string, Func<string, string, bool>>()
             {
                 { "equals", Equals },
+                { "doesNotEqual", DoesNotEqual },
                 { "contains", Contains },
+                { "doesNotContain", DoesNotContain },
                 { "regex", RegexMatch }
             };
             _keychainConditionFunctions = new Dictionary<string, Func<IEnumerable<bool>, bool>>(StringComparer.OrdinalIgnoreCase)
@@ -52,7 +54,11 @@ namespace Kraken.Blocks
 
         private static bool Equals(string value, string part) => value.Equals(part);
 
+        private static bool DoesNotEqual(string value, string part) => !value.Equals(part);
+
         private static bool Contains(string value, string part) => part.Contains(value);
+
+        private static bool DoesNotContain(string value, string part) => !part.Contains(value);
 
         private static bool RegexMatch(string value, string part) => Regex.IsMatch(part, value);
 
