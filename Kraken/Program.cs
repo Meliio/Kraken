@@ -11,7 +11,7 @@ namespace Kraken
         public string WordListPath { get; set; } = String.Empty;
 
         [Option('p', "proxies", HelpText = "Path of the proxies file")]
-        public string[] ProxiesPath { get; set; } = Array.Empty<string>();
+        public IEnumerable<string> ProxiesPath { get; set; } = Array.Empty<string>();
 
         [Option('c', "config", Required = true, HelpText = "Path of the config file")]
         public string ConfigPath { get; set; } = String.Empty;
@@ -50,7 +50,7 @@ namespace Kraken
 
         private static async Task Run(Options options)
         {
-            var checker = new CheckerBuilder(options.WordListPath, options.ProxiesPath, options.ConfigPath, options.Threads).Build();
+            var checker = new CheckerBuilder(options.WordListPath, options.ProxiesPath.ToArray(), options.ConfigPath, options.Threads).Build();
 
             var consoleManager = new ConsoleManager(checker);
 

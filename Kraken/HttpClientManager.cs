@@ -28,7 +28,9 @@ namespace Kraken
 
         public HttpClientManager(string[] proxiesPath)
         {
-            var proxies = File.ReadAllLines(proxiesPath[0]).Select(p => BuildProxyClient(p, Enum.TryParse<ProxyType>(proxiesPath[1], true, out var proxyType) ? proxyType : ProxyType.Http));
+            var proxyType = (proxiesPath.Length == 1) ? ProxyType.Http : Enum.Parse<ProxyType>(proxiesPath[1], true);
+
+            var proxies = File.ReadAllLines(proxiesPath.First()).Select(p => BuildProxyClient(p, proxyType));
 
             var httpClientHandlers = proxies.Select(p => new HttpClientHandler()
             {

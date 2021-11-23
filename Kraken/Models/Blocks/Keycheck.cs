@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Kraken.Models.Blocks
+﻿namespace Kraken.Models.Blocks
 {
     public class Keycheck
     {
