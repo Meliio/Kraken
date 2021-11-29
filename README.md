@@ -10,7 +10,7 @@ Initially appeared on
 download [release](https://github.com/Meliio/Kraken/releases)
 open a cmd then write "cd {path where kraken.exe is located}" and "kraken.exe --help"
 
-### Prerequisites
+### Prerequisite
 
 [.NET Runtime 6.0.0](https://dotnet.microsoft.com/download/dotnet/6.0)
 
@@ -24,6 +24,7 @@ open a cmd then write "cd {path where kraken.exe is located}" and "kraken.exe --
 | -p               | proxies file                                               | kraken.exe -p proxies.txt                   |
 | -b               | number of bots                                             | kraken.exe -b 10                            |
 
+### Example
 
 ```yaml
 settings:
