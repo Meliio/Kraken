@@ -1,3 +1,30 @@
+# Kraken
+
+Kraken is a tool for brute force or credential stuffing attacks high performance
+
+Initially appeared on
+[gist](https://gist.github.com/PurpleBooth/109311bb0361f32d87a2). But the page cannot open anymore so that is why I have moved it here.
+
+## Getting Started
+
+download [release](https://github.com/Meliio/Kraken/releases)
+open a cmd then write "cd {path where kraken.exe is located}" and "kraken.exe --help"
+
+### Prerequisites
+
+[.NET Runtime 6.0.0](https://dotnet.microsoft.com/download/dotnet/6.0)
+
+
+### Usage
+
+| Flag             | Description                                                | Example                                     |
+| ---------------- | ---------------------------------------------------------- | --------------------------------------------|
+| -c               | yaml file of the config                                    | kraken.exe -c config.yaml                   |
+| -w               | wordlist file                                              | kraken.exe -w wordlist.txt                  |
+| -p               | proxies file                                               | kraken.exe -p proxies.txt                   |
+| -b               | number of bots                                             | kraken.exe -b 10                            |
+
+
 ```yaml
 settings:
   name: example
