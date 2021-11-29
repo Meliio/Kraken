@@ -14,8 +14,10 @@ namespace Kraken.Blocks
             _replaceFunctions = new Dictionary<string, Func<string, Match, BotData, string>>(StringComparer.OrdinalIgnoreCase)
             {
                 { "input", ReplaceWithInput },
-                { "combo.username", ReplaceWithComboUsername },
-                { "combo.password", ReplaceWithComboPassword }
+                { "input.user", ReplaceWithInputUsername },
+                { "input.pass", ReplaceWithInputPassword },
+                { "input.username", ReplaceWithInputUsername },
+                { "input.password", ReplaceWithInputPassword }
             };
         }
 
@@ -33,10 +35,10 @@ namespace Kraken.Blocks
 
         private string ReplaceWithInput(string input, Match match, BotData botData) => input.Replace(match.Value, botData.Input.ToString());
 
-        private string ReplaceWithComboUsername(string input, Match match, BotData botData) => input.Replace(match.Value, botData.Input.Combo.Username);
+        private string ReplaceWithInputUsername(string input, Match match, BotData botData) => botData.Input.Combo.IsValid ? input.Replace(match.Value, botData.Input.Combo.Username) : input;
 
-        private string ReplaceWithComboPassword(string input, Match match, BotData botData) => input.Replace(match.Value, botData.Input.Combo.Password);
+        private string ReplaceWithInputPassword(string input, Match match, BotData botData) => botData.Input.Combo.IsValid ? input.Replace(match.Value, botData.Input.Combo.Password) : input;
 
-        private static string ReplaceWithVariableValue(string input, Match match, BotData botData) => botData.Variables.TryGetValue(match.Groups[1].Value, out var value) ? input.Replace(match.Value, value) : input; 
+        private static string ReplaceWithVariableValue(string input, Match match, BotData botData) => botData.Variables.TryGetValue(match.Groups[1].Value, out var value) ? input.Replace(match.Value, value) : input;
     }
 }

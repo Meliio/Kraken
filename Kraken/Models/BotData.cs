@@ -19,7 +19,7 @@ namespace Kraken.Models
             HttpClient = customHttpClient;
             CookieContainer = new CookieContainer();
             Variables = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            Captures = new Dictionary<string, string>();
+            Captures = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         }
     }
 }

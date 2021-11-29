@@ -5,23 +5,24 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Text;
 using YamlDotNet.Serialization;
+using Yove.Proxy;
 
 namespace Kraken
 {
     public class CheckerBuilder
     {
-        private readonly string _wordListPath;
-        private readonly string[] _proxiesPath;
-        private readonly string _configPath;
-        private readonly int _threads;
+        private readonly string _configFile;
+        private readonly string _wordlistFile;
+        private readonly IEnumerable<string> _proxiesFile;
+        private readonly int _bots;
         private readonly Dictionary<string, Func<string, Block>> _buildBlockFunctions;
 
-        public CheckerBuilder(string wordListPath, string[] proxiesPath, string configPath, int threads)
+        public CheckerBuilder(string configFile, string wordlistFile, IEnumerable<string> proxiesFile, int bots)
         {
-            _wordListPath = wordListPath;
-            _proxiesPath = proxiesPath;
-            _configPath = configPath;
-            _threads = (threads == 0) ? Environment.ProcessorCount : threads;
+            _configFile = configFile;
+            _wordlistFile = wordlistFile;
+            _proxiesFile = proxiesFile;
+            _bots = bots;
             _buildBlockFunctions = new Dictionary<string, Func<string, Block>>(StringComparer.OrdinalIgnoreCase)
             {
                 { "request", BuildBlockRequest },
@@ -32,11 +33,7 @@ namespace Kraken
 
         public Checker Build()
         {
-            var botInputs = File.ReadAllLines(_wordListPath).Select(w => new BotInput(w));
-            
-            var httpClientManager = (_proxiesPath.Any()) ? new HttpClientManager(_proxiesPath) : new HttpClientManager();
-
-            var stringReader = new StringReader(File.ReadAllText(_configPath));          
+            var stringReader = new StringReader(File.ReadAllText(_configFile));
 
             var deserializer = new DeserializerBuilder().Build();
 
@@ -52,20 +49,24 @@ namespace Kraken
 
             if (string.IsNullOrEmpty(configSettings.Name))
             {
-                configSettings.Name = Path.GetFileNameWithoutExtension(_configPath);
+                configSettings.Name = Path.GetFileNameWithoutExtension(_configFile);
             }
 
             var blocks = BuildBlocks(config.GetValue("blocks"));
 
+            var botInputs = File.ReadAllLines(_wordlistFile).Select(w => new BotInput(w));
+
+            var httpClientManager = _proxiesFile.Any() ? new HttpClientManager(File.ReadAllLines(_proxiesFile.First()), _proxiesFile.Count() == 2 ? Enum.Parse<ProxyType>(_proxiesFile.ElementAt(1), true) : ProxyType.Http) : new HttpClientManager();
+
             var krakenSettings = JsonConvert.DeserializeObject<KrakenSettings>(File.ReadAllText("settings.json"));
-            
+
             var record = GetRecord(configSettings.Name);
 
             Directory.CreateDirectory(Path.Combine(krakenSettings.OutputDirectory, configSettings.Name));
 
             Console.OutputEncoding = Encoding.UTF8;
 
-            return new Checker(botInputs, httpClientManager, configSettings, blocks, _threads, krakenSettings, record);
+            return new Checker(configSettings, blocks, botInputs, httpClientManager, _bots, krakenSettings, record);
         }
 
         private IEnumerable<Block> BuildBlocks(JToken token)
@@ -119,9 +120,7 @@ namespace Kraken
 
             var url = firstLineSplit[1].StartsWith('/') ? $"https://{headers["Host"]}{firstLineSplit[1]}" : firstLineSplit[1];
 
-            var loadContent = !block.TryGetValue("loadContent", out var token) || (bool)token;
-
-            var request = new Request(httpMethod, url, headers, content, loadContent);
+            var request = new Request(httpMethod, url, headers, content, !block.TryGetValue("redirect", out var redirect) || (bool)redirect, !block.TryGetValue("loadContent", out var loadContent) || (bool)loadContent);
 
             return new BlockRequest(request);
         }
@@ -136,15 +135,15 @@ namespace Kraken
 
             var collection = database.GetCollection<Record>("records");
 
-            if (collection.Exists(r => r.ConfigName == configName && r.WordListLocation == _wordListPath))
+            if (collection.Exists(r => r.ConfigName == configName && r.WordListLocation == _wordlistFile))
             {
-                return collection.FindOne(r => r.ConfigName == configName && r.WordListLocation == _wordListPath);
+                return collection.FindOne(r => r.ConfigName == configName && r.WordListLocation == _wordlistFile);
             };
 
             var record = new Record()
             {
                 ConfigName = configName,
-                WordListLocation = _wordListPath,
+                WordListLocation = _wordlistFile,
                 Progress = 0
             };
 

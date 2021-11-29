@@ -8,12 +8,17 @@ namespace Kraken.Blocks
     public class BlockKeycheck : Block
     {
         private readonly Keycheck _keycheck;
-        private readonly Dictionary<string, Func<string, string, bool>> _keyConditionFunctions;
         private readonly Dictionary<string, Func<IEnumerable<bool>, bool>> _keychainConditionFunctions;
+        private readonly Dictionary<string, Func<string, string, bool>> _keyConditionFunctions;
 
         public BlockKeycheck(Keycheck keycheck)
         {
             _keycheck = keycheck;
+            _keychainConditionFunctions = new Dictionary<string, Func<IEnumerable<bool>, bool>>(StringComparer.OrdinalIgnoreCase)
+            {
+                { "or", Any },
+                { "and", All }
+            };
             _keyConditionFunctions = new Dictionary<string, Func<string, string, bool>>()
             {
                 { "equals", Equals },
@@ -21,11 +26,6 @@ namespace Kraken.Blocks
                 { "contains", Contains },
                 { "doesNotContain", DoesNotContain },
                 { "regex", RegexMatch }
-            };
-            _keychainConditionFunctions = new Dictionary<string, Func<IEnumerable<bool>, bool>>(StringComparer.OrdinalIgnoreCase)
-            {
-                { "or", Any },
-                { "and", All }
             };
         }
 
@@ -37,8 +37,11 @@ namespace Kraken.Blocks
             {
                 if (_keychainConditionFunctions[keychain.Condition].Invoke(keychain.Keys.Select(k => _keyConditionFunctions[k.Condition].Invoke(ReplaceValues(k.Value, botData), ReplaceValues(k.Source, botData)))))
                 {
-                    botData.Status = Enum.TryParse<BotStatus>(keychain.Status, true, out var botStatus) ? botStatus : BotStatus.None;
-                    success = true;
+                    if (Enum.TryParse<BotStatus>(keychain.Status, true, out var botStatus))
+                    {
+                        botData.Status = botStatus;
+                        success = true;
+                    }
                 }
             }
 

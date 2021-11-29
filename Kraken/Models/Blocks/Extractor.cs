@@ -10,10 +10,10 @@
         public string Right { get; set; } = String.Empty;
         public string Json { get; set; } = String.Empty;
         public string Selector { get; set; } = String.Empty;
-        public string Attribute { get; set; } = String.Empty;
+        public string Attribute { get; set; } = "innerHTML";
         public string Regex { get; set; } = String.Empty;
-        public string Group { get; set; } = String.Empty;
-        public string Source { get; set; } = String.Empty;
-        public bool Capture { get; set; } = false;
+        public string Group { get; set; } = "1";
+        public string Source { get; set; } = "<response.content>";
+        public bool Capture { get; set; }
     }
 }

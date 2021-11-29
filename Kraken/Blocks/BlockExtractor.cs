@@ -18,7 +18,7 @@ namespace Kraken.Blocks
             _extractor = extractor;
             _extractorFunctions = new Dictionary<string, Func<string, string>>(StringComparer.OrdinalIgnoreCase)
             {
-                { "between", BetweenExtractor },
+                { "lr", LeftRightExtractor },
                 { "json", JsonExtractor },
                 { "css", CssExtractor },
                 { "regex", RegexExtractor }
@@ -35,12 +35,7 @@ namespace Kraken.Blocks
         {
             var result = _extractorFunctions[_extractor.Type].Invoke(ReplaceValues(_extractor.Source, botData));
 
-            if (string.IsNullOrEmpty(result))
-            {
-                return Task.CompletedTask;
-            }
-
-            result = _extractor.Prefix + result + _extractor.Suffix;
+            result = _extractor.Prefix + result.Trim() + _extractor.Suffix;
 
             botData.Variables[_extractor.Name] = result;
 
@@ -52,13 +47,13 @@ namespace Kraken.Blocks
             return Task.CompletedTask;
         }
 
-        private string BetweenExtractor(string source)
+        private string LeftRightExtractor(string source)
         {
             var indexOfBegin = source.IndexOf(_extractor.Left);
 
             if (indexOfBegin == -1)
             {
-                return string.Empty;
+                return String.Empty;
             }
 
             source = source[(indexOfBegin + _extractor.Left.Length)..];
@@ -67,7 +62,7 @@ namespace Kraken.Blocks
 
             if (indexOfEnd == -1)
             {
-                return string.Empty;
+                return String.Empty;
             }
 
             return source[..indexOfEnd];
@@ -79,7 +74,7 @@ namespace Kraken.Blocks
 
             if (token is null)
             {
-                return string.Empty;
+                return String.Empty;
             }
 
             return token.ToString();
@@ -95,10 +90,10 @@ namespace Kraken.Blocks
 
             if (element is null)
             {
-                return string.Empty;
+                return String.Empty;
             }
 
-            return _getSelectorAttributeFunctions.ContainsKey(_extractor.Attribute) ? _getSelectorAttributeFunctions[_extractor.Attribute].Invoke(element) : element.HasAttribute(_extractor.Attribute) ? element.GetAttribute(_extractor.Attribute) : string.Empty;
+            return _getSelectorAttributeFunctions.ContainsKey(_extractor.Attribute) ? _getSelectorAttributeFunctions[_extractor.Attribute].Invoke(element) : element.HasAttribute(_extractor.Attribute) ? element.GetAttribute(_extractor.Attribute) : String.Empty;
         }
 
         private static string AttributeInnerHtml(IElement element) => element.InnerHtml;

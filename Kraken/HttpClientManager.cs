@@ -6,57 +6,45 @@ namespace Kraken
 {
     public class HttpClientManager
     {
-        private readonly List<CustomHttpClient> _customHttpClients;
+        private readonly CustomHttpClient[] _httpClients;
         private readonly Random _random;
 
         public HttpClientManager()
         {
-            var httpClientHandler = new HttpClientHandler()
+            _httpClients = new CustomHttpClient[] 
             {
-                AutomaticDecompression = DecompressionMethods.All,
-                UseCookies = false
-            };
-
-            var customHttpClient = new CustomHttpClient(httpClientHandler);
-
-            _customHttpClients = new List<CustomHttpClient>()
-            {
-                customHttpClient
+                new CustomHttpClient(BuildHttpClientHandler()) 
+                { 
+                    Timeout = TimeSpan.FromSeconds(10) 
+                } 
             };
             _random = new Random();
         }
 
-        public HttpClientManager(string[] proxiesPath)
+        public HttpClientManager(IEnumerable<string> proxies, ProxyType proxyType)
         {
-            var proxyType = (proxiesPath.Length == 1) ? ProxyType.Http : Enum.Parse<ProxyType>(proxiesPath[1], true);
-
-            var proxies = File.ReadAllLines(proxiesPath.First()).Select(p => BuildProxyClient(p, proxyType));
-
-            var httpClientHandlers = proxies.Select(p => new HttpClientHandler()
+            _httpClients = proxies.Select(p => BuildProxyClient(p, proxyType)).Select(p => BuildHttpClientHandler(p)).Select(h => new CustomHttpClient(h)
             {
-                AutomaticDecompression = DecompressionMethods.All,
-                UseCookies = false,
-                Proxy = p
-            });
-
-            var customHttpClients = httpClientHandlers.Select(h => new CustomHttpClient(h));
-
-            _customHttpClients = new List<CustomHttpClient>(customHttpClients);
+                Timeout = TimeSpan.FromSeconds(10)
+            }).ToArray();
             _random = new Random();
         }
 
-        public CustomHttpClient GetRandomCustomHttpClient()
+        public CustomHttpClient GetRandomHttpClient()
         {
-            var customHttpClients = _customHttpClients.Where(h => h.IsValid);
+            var httpClients = _httpClients.Where(h => h.IsValid);
 
-            if (customHttpClients.Any())
+            if (httpClients.Any())
             {
-                return customHttpClients.ElementAt(_random.Next(customHttpClients.Count()));
+                return httpClients.ElementAt(_random.Next(httpClients.Count()));
             }
 
-            _customHttpClients.ForEach(h => h.IsValid = true);
+            foreach (var httpClient in _httpClients)
+            {
+                httpClient.IsValid = true;
+            }
 
-            return _customHttpClients[_random.Next(_customHttpClients.Count)];
+            return _httpClients[_random.Next(_httpClients.Length)];
         }
 
         private static ProxyClient BuildProxyClient(string proxy, ProxyType proxyType)
@@ -72,5 +60,13 @@ namespace Kraken
 
             return proxyClient;
         }
+
+        private static HttpClientHandler BuildHttpClientHandler(ProxyClient? proxyClient = null) => new()
+        {
+            AllowAutoRedirect = false,
+            AutomaticDecompression = DecompressionMethods.All,
+            Proxy = proxyClient,
+            UseCookies = false
+        };
     }
 }

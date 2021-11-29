@@ -10,26 +10,28 @@ namespace Kraken
     {
         public CheckerStats Stats { get; }
 
-        private readonly IEnumerable<BotInput> _botInputs;
-        private readonly HttpClientManager _httpClientManager;
         private readonly ConfigSettings _configSettings;
         private readonly IEnumerable<Block> _blocks;
-        private readonly int _threads;
+        private readonly IEnumerable<BotInput> _botInputs;
+        private readonly HttpClientManager _httpClientManager;
+        private readonly int _bots;
         private readonly KrakenSettings _krakenSettings;
         private readonly Record _record;
+        private readonly IEnumerable<BotStatus> _validStatuses;
         private readonly ReaderWriterLock _readerWriterLock;
         private readonly List<CheckerOutput> _outputs;
 
-        public Checker(IEnumerable<BotInput> botInputs, HttpClientManager httpClientManager, ConfigSettings configSettings, IEnumerable<Block> blocks, int threads, KrakenSettings krakenSettings, Record record)
+        public Checker(ConfigSettings configSettings, IEnumerable<Block> blocks, IEnumerable<BotInput> botInputs, HttpClientManager httpClientManager, int bots, KrakenSettings krakenSettings, Record record)
         {
             Stats = new CheckerStats(botInputs.Count(), record.Progress);
-            _botInputs = botInputs;
-            _httpClientManager = httpClientManager;
             _configSettings = configSettings;
             _blocks = blocks;
-            _threads = threads;
+            _botInputs = botInputs;
+            _httpClientManager = httpClientManager;
+            _bots = bots;
             _krakenSettings = krakenSettings;
             _record = record;
+            _validStatuses = new BotStatus[] { BotStatus.None, BotStatus.Success, BotStatus.Free };
             _readerWriterLock = new ReaderWriterLock();
             _outputs = new List<CheckerOutput>();
         }
@@ -40,20 +42,15 @@ namespace Kraken
 
             _ = StartUpdatingRecordAsync();
 
-            var options = new ParallelOptions()
-            {
-                MaxDegreeOfParallelism = _threads
-            };
-
-            await Parallel.ForEachAsync(_botInputs.Skip(_record.Progress), options, async (botInput, _) =>
+            await Parallel.ForEachAsync(_botInputs.Skip(_record.Progress), new ParallelOptions() { MaxDegreeOfParallelism = _bots }, async (input, _) =>
             {
                 BotData botData = null;
 
                 for (var attempts = 0; attempts < 10; attempts++)
                 {
-                    var customHttpClient = _httpClientManager.GetRandomCustomHttpClient();
+                    var httpClient = _httpClientManager.GetRandomHttpClient();
 
-                    botData = new BotData(botInput, customHttpClient);
+                    botData = new BotData(input, httpClient);
 
                     foreach (var block in _blocks)
                     {
@@ -71,7 +68,7 @@ namespace Kraken
                     }
                     else if (botData.Status == BotStatus.Ban)
                     {
-                        customHttpClient.IsValid = false;
+                        httpClient.IsValid = false;
                         Stats.IncrementBan();
                     }
                     else
@@ -86,38 +83,37 @@ namespace Kraken
                 }
                 else
                 {
-                    if (botData.Status is not BotStatus.None and not BotStatus.Success and not BotStatus.Free)
+                    if (_validStatuses.Contains(botData.Status))
                     {
-                        botData.Status = BotStatus.ToCheck;
+                        var outputPath = Path.Combine(_krakenSettings.OutputDirectory, _configSettings.Name, $"{botData.Status.ToString().ToLower()}.txt");
+                        var output = OutputBuilder(botData);
+
+                        await AppendOutputToFileAsync(outputPath, output);
+
+                        switch (botData.Status)
+                        {
+                            case BotStatus.None:
+                                Console.ForegroundColor = ConsoleColor.White;
+                                Console.WriteLine($"[NONE] {output}");
+                                Stats.IncrementSuccess();
+                                break;
+                            case BotStatus.Success:
+                                Console.ForegroundColor = ConsoleColor.Green;
+                                Console.WriteLine($"[SUCCESS] {output}");
+                                Stats.IncrementSuccess();
+                                break;
+                            case BotStatus.Free:
+                                Console.ForegroundColor = ConsoleColor.Yellow;
+                                Console.WriteLine($"[FREE] {output}");
+                                Stats.IncrementFree();
+                                break;
+                        }
                     }
-
-                    var outputPath = Path.Combine(_krakenSettings.OutputDirectory, _configSettings.Name, $"{botData.Status.ToString().ToLower()}.txt");
-                    var output = OutputBuilder(botData);
-
-                    await AppendOutputToFileAsync(outputPath, output);
-
-                    switch (botData.Status)
+                    else
                     {
-                        case BotStatus.None:
-                            Console.ForegroundColor = ConsoleColor.White;
-                            Console.WriteLine($"[NONE] {output}");
-                            Stats.IncrementSuccess();
-                            break;
-                        case BotStatus.Success:
-                            Console.ForegroundColor = ConsoleColor.Green;
-                            Console.WriteLine($"[SUCCESS] {output}");
-                            Stats.IncrementSuccess();
-                            break;
-                        case BotStatus.Free:
-                            Console.ForegroundColor = ConsoleColor.Yellow;
-                            Console.WriteLine($"[FREE] {output}");
-                            Stats.IncrementFree();
-                            break;
-                        default:
-                            Console.ForegroundColor = ConsoleColor.DarkCyan;
-                            Console.WriteLine($"[TOCHECK] {output}");
-                            Stats.IncrementToCheck();
-                            break;
+                        Console.ForegroundColor = ConsoleColor.DarkCyan;
+                        Console.WriteLine($"[TOCHECK] {input}");
+                        Stats.IncrementToCheck();
                     }
                 }
 

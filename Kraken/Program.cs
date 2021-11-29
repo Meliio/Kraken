@@ -5,19 +5,20 @@ using Newtonsoft.Json.Serialization;
 
 namespace Kraken
 {
-    public class Options
+    [Verb("run")]
+    public class RunOptions
     {
-        [Option('w', "wordlist", Required = true, HelpText = "Path of the word list file")]
-        public string WordListPath { get; set; } = String.Empty;
+        [Option('c', "config", Required = true)]
+        public string ConfigFile { get; set; }
 
-        [Option('p', "proxies", HelpText = "Path of the proxies file")]
-        public IEnumerable<string> ProxiesPath { get; set; } = Array.Empty<string>();
+        [Option('w', "wordlist", Required = true)]
+        public string WordlistFile { get; set; }
 
-        [Option('c', "config", Required = true, HelpText = "Path of the config file")]
-        public string ConfigPath { get; set; } = String.Empty;
+        [Option('p', "proxies")]
+        public IEnumerable<string> ProxiesFile { get; set; }
 
-        [Option('t', "threads", HelpText = "Number of threads")]
-        public int Threads { get; set; }
+        [Option('b', "bots", Default = 1)]
+        public int Bots { get; set; }
     }
 
     public class Program
@@ -28,7 +29,7 @@ namespace Kraken
         {
             await GenerateSettingsFile();
 
-            await Parser.Default.ParseArguments<Options>(args).WithParsedAsync(Run);
+            await Parser.Default.ParseArguments<RunOptions>(args).WithParsedAsync(Run);
         }
 
         private static async Task GenerateSettingsFile()
@@ -48,17 +49,15 @@ namespace Kraken
             }));
         }
 
-        private static async Task Run(Options options)
+        private static async Task Run(RunOptions options)
         {
-            var checker = new CheckerBuilder(options.WordListPath, options.ProxiesPath.ToArray(), options.ConfigPath, options.Threads).Build();
+            var checker = new CheckerBuilder(options.ConfigFile, options.WordlistFile, options.ProxiesFile, options.Bots).Build();
 
             var consoleManager = new ConsoleManager(checker);
 
             _ = consoleManager.StartUpdatingConsoleCheckerStatsAsync();
 
             await checker.StartAsync();
-
-            await Task.Delay(1000);
         }
     }
 }
