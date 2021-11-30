@@ -14,6 +14,7 @@ namespace Kraken
         private readonly IEnumerable<Block> _blocks;
         private readonly IEnumerable<BotInput> _botInputs;
         private readonly HttpClientManager _httpClientManager;
+        private readonly int _skip;
         private readonly int _bots;
         private readonly KrakenSettings _krakenSettings;
         private readonly Record _record;
@@ -21,13 +22,14 @@ namespace Kraken
         private readonly ReaderWriterLock _readerWriterLock;
         private readonly List<CheckerOutput> _outputs;
 
-        public Checker(ConfigSettings configSettings, IEnumerable<Block> blocks, IEnumerable<BotInput> botInputs, HttpClientManager httpClientManager, int bots, KrakenSettings krakenSettings, Record record)
+        public Checker(ConfigSettings configSettings, IEnumerable<Block> blocks, IEnumerable<BotInput> botInputs, HttpClientManager httpClientManager, int skip, int bots, KrakenSettings krakenSettings, Record record)
         {
             Stats = new CheckerStats(botInputs.Count(), record.Progress);
             _configSettings = configSettings;
             _blocks = blocks;
             _botInputs = botInputs;
             _httpClientManager = httpClientManager;
+            _skip = skip;
             _bots = bots;
             _krakenSettings = krakenSettings;
             _record = record;
@@ -42,7 +44,7 @@ namespace Kraken
 
             _ = StartUpdatingRecordAsync();
 
-            await Parallel.ForEachAsync(_botInputs.Skip(_record.Progress), new ParallelOptions() { MaxDegreeOfParallelism = _bots }, async (input, _) =>
+            await Parallel.ForEachAsync(_botInputs.Skip(_skip == 0 ? _record.Progress : _skip), new ParallelOptions() { MaxDegreeOfParallelism = _bots }, async (input, _) =>
             {
                 BotData botData = null;
 

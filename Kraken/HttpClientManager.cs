@@ -11,22 +11,29 @@ namespace Kraken
 
         public HttpClientManager()
         {
-            _httpClients = new CustomHttpClient[] 
-            {
-                new CustomHttpClient(BuildHttpClientHandler()) 
-                { 
-                    Timeout = TimeSpan.FromSeconds(10) 
-                } 
+            var httpClientHandler = BuildHttpClientHandler();
+
+            var httpClient = new CustomHttpClient(httpClientHandler)
+            { 
+                Timeout = TimeSpan.FromSeconds(10) 
             };
+
+            _httpClients = new CustomHttpClient[] { httpClient };
             _random = new Random();
         }
 
         public HttpClientManager(IEnumerable<string> proxies, ProxyType proxyType)
         {
-            _httpClients = proxies.Select(p => BuildProxyClient(p, proxyType)).Select(p => BuildHttpClientHandler(p)).Select(h => new CustomHttpClient(h)
+            var proxyClients = proxies.Select(p => BuildProxyClient(p, proxyType));
+
+            var httpClientHandlers = proxyClients.Select(p => BuildHttpClientHandler(p));
+
+            var httpClients = httpClientHandlers.Select(h => new CustomHttpClient(h)
             {
                 Timeout = TimeSpan.FromSeconds(10)
-            }).ToArray();
+            });
+
+            _httpClients = httpClients.ToArray();
             _random = new Random();
         }
 

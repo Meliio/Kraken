@@ -9,22 +9,18 @@ using Yove.Proxy;
 
 namespace Kraken
 {
-    public class CheckerBuilder
+    public class DebuggerBuilder
     {
         private readonly string _configFile;
-        private readonly string _wordlistFile;
-        private readonly IEnumerable<string> _proxiesFile;
-        private readonly int _skip;
-        private readonly int _bots;
+        private readonly string _botInput;
+        private readonly IEnumerable<string> _proxy;
         private readonly Dictionary<string, Func<string, Block>> _buildBlockFunctions;
 
-        public CheckerBuilder(string configFile, string wordlistFile, IEnumerable<string> proxiesFile,int skip, int bots)
+        public DebuggerBuilder(string configFile, string botInput, IEnumerable<string> proxy)
         {
             _configFile = configFile;
-            _wordlistFile = wordlistFile;
-            _proxiesFile = proxiesFile;
-            _skip = skip;
-            _bots = bots;
+            _botInput = botInput;
+            _proxy = proxy;
             _buildBlockFunctions = new Dictionary<string, Func<string, Block>>(StringComparer.OrdinalIgnoreCase)
             {
                 { "request", BuildBlockRequest },
@@ -33,7 +29,7 @@ namespace Kraken
             };
         }
 
-        public Checker Build()
+        public Debugger Build()
         {
             var stringReader = new StringReader(File.ReadAllText(_configFile));
 
@@ -56,19 +52,13 @@ namespace Kraken
 
             var blocks = BuildBlocks(config.GetValue("blocks"));
 
-            var botInputs = File.ReadAllLines(_wordlistFile).Select(w => new BotInput(w));
+            var botInputs = new BotInput(_botInput);
 
-            var httpClientManager = _proxiesFile.Any() ? new HttpClientManager(File.ReadAllLines(_proxiesFile.First()), _proxiesFile.Count() == 2 ? Enum.Parse<ProxyType>(_proxiesFile.ElementAt(1), true) : ProxyType.Http) : new HttpClientManager();
-
-            var krakenSettings = JsonConvert.DeserializeObject<KrakenSettings>(File.ReadAllText("settings.json"));
-
-            var record = GetRecord(configSettings.Name);
-
-            Directory.CreateDirectory(Path.Combine(krakenSettings.OutputDirectory, configSettings.Name));
+            var httpClientManager = _proxy.Any() ? new HttpClientManager(new string[] { _proxy.First() }, _proxy.Count() == 2 ? Enum.Parse<ProxyType>(_proxy.ElementAt(1), true) : ProxyType.Http) : new HttpClientManager();
 
             Console.OutputEncoding = Encoding.UTF8;
 
-            return new Checker(configSettings, blocks, botInputs, httpClientManager, _skip, _bots, krakenSettings, record);
+            return new Debugger(blocks, botInputs, httpClientManager);
         }
 
         private IEnumerable<Block> BuildBlocks(JToken token)
@@ -130,28 +120,5 @@ namespace Kraken
         private BlockExtractor BuildBlockExtractor(string json) => new(JsonConvert.DeserializeObject<Extractor>(json));
 
         private BlockKeycheck BuildBlockKeycheck(string json) => new(JsonConvert.DeserializeObject<Keycheck>(json));
-
-        private Record GetRecord(string configName)
-        {
-            using var database = new LiteDB.LiteDatabase("Kraken.db");
-
-            var collection = database.GetCollection<Record>("records");
-
-            if (collection.Exists(r => r.ConfigName == configName && r.WordListLocation == _wordlistFile))
-            {
-                return collection.FindOne(r => r.ConfigName == configName && r.WordListLocation == _wordlistFile);
-            };
-
-            var record = new Record()
-            {
-                ConfigName = configName,
-                WordListLocation = _wordlistFile,
-                Progress = 0
-            };
-
-            collection.Insert(record);
-
-            return record;
-        }
     }
 }

@@ -41,7 +41,7 @@ namespace Kraken
 
                 checkerStats.Clear();
 
-                await Task.Delay(10000);
+                await Task.Delay(TimeSpan.FromSeconds(10));
             }
         }
     }
