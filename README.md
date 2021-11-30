@@ -47,7 +47,7 @@ blocks:
          Pragma: no-cache
          Accept: */*
          
-         username=<combo.username>&password=<combo.password>&token=<token>
+         username=<input.username>&password=<input.password>&token=<token>
   - keycheck:
       keychains:
         - status: failure
