@@ -43,7 +43,7 @@ namespace Kraken
             stopwatch.Stop();
 
             Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine($"===== DEBUGGER ENDED AFTER {stopwatch.Elapsed.TotalSeconds} SECOND(S) WITH STATUS: {_botInput} =====");
+            Console.WriteLine($"===== DEBUGGER ENDED AFTER {stopwatch.Elapsed.TotalSeconds} SECOND(S) WITH STATUS: {botData.Status.ToString().ToUpper()} =====");
         }
     }
 }

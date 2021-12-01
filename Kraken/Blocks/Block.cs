@@ -17,7 +17,8 @@ namespace Kraken.Blocks
                 { "input.user", ReplaceWithInputUsername },
                 { "input.pass", ReplaceWithInputPassword },
                 { "input.username", ReplaceWithInputUsername },
-                { "input.password", ReplaceWithInputPassword }
+                { "input.password", ReplaceWithInputPassword },
+                { "response.cookies", ReplaceWithResponseCookies }
             };
         }
 
@@ -40,6 +41,8 @@ namespace Kraken.Blocks
         private string ReplaceWithInputUsername(string input, Match match, BotData botData) => botData.Input.Combo.IsValid ? input.Replace(match.Value, botData.Input.Combo.Username) : input;
 
         private string ReplaceWithInputPassword(string input, Match match, BotData botData) => botData.Input.Combo.IsValid ? input.Replace(match.Value, botData.Input.Combo.Password) : input;
+
+        private static string ReplaceWithResponseCookies(string input, Match match, BotData botData) => input.Replace(match.Value, String.Join(Environment.NewLine, botData.CookieContainer.GetAllCookies()));
 
         private static string ReplaceWithVariableValue(string input, Match match, BotData botData) => botData.Variables.TryGetValue(match.Groups[1].Value, out var value) ? input.Replace(match.Value, value) : input;
     }
