@@ -11,7 +11,12 @@ namespace Kraken
 
         public HttpClientManager()
         {
-            var httpClientHandler = BuildHttpClientHandler();
+            var httpClientHandler = new HttpClientHandler()
+            {
+                AllowAutoRedirect = false,
+                AutomaticDecompression = DecompressionMethods.All,
+                UseCookies = false
+            };
 
             var httpClient = new CustomHttpClient(httpClientHandler)
             { 
@@ -26,7 +31,7 @@ namespace Kraken
         {
             var proxyClients = proxies.Select(p => BuildProxyClient(p, proxyType));
 
-            var httpClientHandlers = proxyClients.Select(p => BuildHttpClientHandler(p));
+            var httpClientHandlers = proxyClients.Select(p => BuildPRoxyHttpClientHandler(p));
 
             var httpClients = httpClientHandlers.Select(h => new CustomHttpClient(h)
             {
@@ -68,7 +73,7 @@ namespace Kraken
             return proxyClient;
         }
 
-        private static HttpClientHandler BuildHttpClientHandler(ProxyClient? proxyClient = null) => new()
+        private static HttpClientHandler BuildPRoxyHttpClientHandler(ProxyClient proxyClient) => new()
         {
             AllowAutoRedirect = false,
             AutomaticDecompression = DecompressionMethods.All,
