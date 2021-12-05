@@ -30,8 +30,8 @@ namespace Kraken
         [Option('c', "config", Required = true)]
         public string ConfigFile { get; set; }
 
-        [Option('i', "input", Required = true)]
-        public string BotInput { get; set; }
+        [Option('i', "input")]
+        public string BotInput { get; set; } = string.Empty;
 
         [Option('p', "proxy")]
         public IEnumerable<string> Proxy { get; set; }

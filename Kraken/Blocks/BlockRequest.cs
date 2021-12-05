@@ -95,7 +95,7 @@ namespace Kraken.Blocks
         public override async Task Debug(BotData botData)
         {
             Console.ForegroundColor = ConsoleColor.DarkYellow;
-            Console.WriteLine(Environment.NewLine + "[--- Executing Block REQUEST ---]");
+            Console.WriteLine("[--- Executing Block REQUEST ---]");
 
             using var requestMessage = new HttpRequestMessage(_request.Method, ReplaceValues(_request.Url, botData));
 
@@ -185,13 +185,14 @@ namespace Kraken.Blocks
                 Console.WriteLine($"{Environment.NewLine}{botData.Variables["response.address"]} {botData.Variables["response.statusCode"]}");
 
                 Console.ForegroundColor = ConsoleColor.Magenta;
-                Console.WriteLine(botData.Variables["response.headers"]);
+                Console.WriteLine(botData.Variables["response.headers"].Trim());
 
                 Console.ForegroundColor = ConsoleColor.Yellow;
                 Console.WriteLine(string.Join(Environment.NewLine, cookieContainer.GetAllCookies().Select(c => $"{c.Name}: {c.Value}")));
 
                 Console.ForegroundColor = ConsoleColor.DarkGreen;
                 Console.WriteLine(_request.LoadContent ? botData.Variables["response.content"] : "[SKIPPED]");
+                Console.WriteLine();
             }
             catch
             {

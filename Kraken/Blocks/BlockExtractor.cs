@@ -48,7 +48,7 @@ namespace Kraken.Blocks
         public override Task Debug(BotData botData)
         {
             Console.ForegroundColor = ConsoleColor.DarkYellow;
-            Console.WriteLine(Environment.NewLine + "[--- Executing Block EXTRACTOR ---]");
+            Console.WriteLine("[--- Executing Block EXTRACTOR ---]");
 
             var result = _extractorFunctions[_extractor.Type].Invoke(ReplaceValues(_extractor.Source, botData));
 
@@ -61,7 +61,9 @@ namespace Kraken.Blocks
 
             Console.ForegroundColor = _extractor.Capture ? ConsoleColor.Red : ConsoleColor.Yellow;
 
-            Console.WriteLine($"Extracted variable | Name: {_extractor.Name} | Value: {result} | Captur: {_extractor.Capture}");
+            Console.WriteLine($"Extracted variable | Name: {_extractor.Name} | Value: {result} | Capture: {_extractor.Capture}");
+
+            Console.WriteLine();
 
             return Task.CompletedTask;
         }

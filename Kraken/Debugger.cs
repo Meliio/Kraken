@@ -20,7 +20,10 @@ namespace Kraken
 
         public async Task StartAsync()
         {
-            Console.WriteLine($"INPUT = {_botInput}");
+            if (!string.IsNullOrEmpty(_botInput.ToString()))
+            {
+                Console.WriteLine($"INPUT = {_botInput}");
+            }
 
             var httpClient = _httpClientManager.GetRandomHttpClient();
 

@@ -54,7 +54,7 @@ namespace Kraken.Blocks
         public override Task Debug(BotData botData)
         {
             Console.ForegroundColor = ConsoleColor.DarkYellow;
-            Console.WriteLine(Environment.NewLine + "[--- Executing Block KEY CHECK ---]");
+            Console.WriteLine("[--- Executing Block KEY CHECK ---]");
 
             var success = false;
 
@@ -85,6 +85,8 @@ namespace Kraken.Blocks
                         {
                             Console.WriteLine($"Found '{keychain.Condition.ToUpper()}' Key {(result.Item4.Length < 30 ? result.Item4 : $"{result.Item4[..30].Replace("\n", string.Empty)} [...]")} {result.Item3.Replace("\n", string.Empty)} {result.Item2}");
                         }
+
+                        Console.WriteLine();
                     }
                 }
             }
