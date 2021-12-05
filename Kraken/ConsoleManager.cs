@@ -19,7 +19,7 @@ namespace Kraken
             {
                 checkerStats
                     .Append("[STATS] ")
-                    .Append(_checker.Stats.Progress * 100 / _checker.Stats.WordListLenght)
+                    .Append(_checker.Stats.Progress * 100 / _checker.Stats.WordlistLenght)
                     .Append("% - Success: ")
                     .Append(_checker.Stats.Success)
                     .Append(" Free: ")

@@ -18,7 +18,7 @@ namespace Kraken
         private readonly int _bots;
         private readonly Dictionary<string, Func<string, Block>> _buildBlockFunctions;
 
-        public CheckerBuilder(string configFile, string wordlistFile, IEnumerable<string> proxiesFile,int skip, int bots)
+        public CheckerBuilder(string configFile, string wordlistFile, IEnumerable<string> proxiesFile, int skip, int bots)
         {
             _configFile = configFile;
             _wordlistFile = wordlistFile;
@@ -87,9 +87,9 @@ namespace Kraken
 
         private BlockRequest BuildBlockRequest(string json)
         {
-            var block = JObject.Parse(json);
+            var requestBlock = JObject.Parse(json);
 
-            var raw = block.GetValue("raw");
+            var raw = requestBlock.GetValue("raw");
 
             var lines = raw.ToString().Trim().Split("\n");
 
@@ -122,7 +122,7 @@ namespace Kraken
 
             var url = firstLineSplit[1].StartsWith('/') ? $"https://{headers["Host"]}{firstLineSplit[1]}" : firstLineSplit[1];
 
-            var request = new Request(httpMethod, url, headers, content, !block.TryGetValue("redirect", out var redirect) || (bool)redirect, !block.TryGetValue("loadContent", out var loadContent) || (bool)loadContent);
+            var request = new Request(httpMethod, url, headers, content, !requestBlock.TryGetValue("redirect", out var redirect) || (bool)redirect, !requestBlock.TryGetValue("loadContent", out var loadContent) || (bool)loadContent);
 
             return new BlockRequest(request);
         }

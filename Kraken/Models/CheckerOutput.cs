@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Kraken.Models
+﻿namespace Kraken.Models
 {
     public class CheckerOutput
     {

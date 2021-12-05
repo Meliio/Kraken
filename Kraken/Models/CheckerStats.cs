@@ -2,7 +2,7 @@
 {
     public class CheckerStats
     {
-        public int WordListLenght { get; }
+        public int WordlistLenght { get; }
         public int Progress { get => _checkPoint + _checked; }
         public int ToCheck => _toCheck;
         public int Success => _success;
@@ -13,12 +13,6 @@
         public int Checked => _checked;
         public int Cpm { get; set; }
 
-        public CheckerStats(int wordListLenght, int checkPoint)
-        {
-            WordListLenght = wordListLenght;
-            _checkPoint = checkPoint;
-        }
-
         private readonly int _checkPoint;
 
         private int _toCheck;
@@ -28,6 +22,12 @@
         private int _retry;
         private int _ban;
         private int _checked;
+
+        public CheckerStats(int wordlistLenght, int checkPoint)
+        {
+            WordlistLenght = wordlistLenght;
+            _checkPoint = checkPoint;
+        }
 
         public int IncrementToCheck() => Interlocked.Increment(ref _toCheck);
         public int IncrementSuccess() => Interlocked.Increment(ref _success);

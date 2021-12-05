@@ -6,12 +6,12 @@ namespace Kraken.Blocks
     public abstract class Block
     {
         private readonly Regex _regex;
-        private readonly Dictionary<string, Func<string, Match, BotData, string>> _replaceFunctions;
+        private readonly Dictionary<string, Func<string, string, BotData, string>> _replaceFunctions;
 
         public Block()
         {
             _regex = new Regex("<([^<>]+)>", RegexOptions.Compiled);
-            _replaceFunctions = new Dictionary<string, Func<string, Match, BotData, string>>(StringComparer.OrdinalIgnoreCase)
+            _replaceFunctions = new Dictionary<string, Func<string, string, BotData, string>>(StringComparer.OrdinalIgnoreCase)
             {
                 { "input", ReplaceWithInput },
                 { "input.user", ReplaceWithInputUsername },
@@ -30,19 +30,19 @@ namespace Kraken.Blocks
         {
             foreach (Match match in _regex.Matches(input))
             {
-                input = _replaceFunctions.ContainsKey(match.Groups[1].Value) ? _replaceFunctions[match.Groups[1].Value].Invoke(input, match, botData) : ReplaceWithVariableValue(input, match, botData);
+                input = _replaceFunctions.ContainsKey(match.Groups[1].Value) ? _replaceFunctions[match.Groups[1].Value].Invoke(input, match.Value, botData) : ReplaceWithVariableValue(input, match, botData);
             }
 
             return input;
         }
 
-        private string ReplaceWithInput(string input, Match match, BotData botData) => input.Replace(match.Value, botData.Input.ToString());
+        private string ReplaceWithInput(string input, string match, BotData botData) => input.Replace(match, botData.Input.ToString());
 
-        private string ReplaceWithInputUsername(string input, Match match, BotData botData) => botData.Input.Combo.IsValid ? input.Replace(match.Value, botData.Input.Combo.Username) : input;
+        private string ReplaceWithInputUsername(string input, string match, BotData botData) => input.Replace(match, botData.Input.Combo.Username);
 
-        private string ReplaceWithInputPassword(string input, Match match, BotData botData) => botData.Input.Combo.IsValid ? input.Replace(match.Value, botData.Input.Combo.Password) : input;
+        private string ReplaceWithInputPassword(string input, string match, BotData botData) => input.Replace(match, botData.Input.Combo.Password);
 
-        private static string ReplaceWithResponseCookies(string input, Match match, BotData botData) => input.Replace(match.Value, String.Join(Environment.NewLine, botData.CookieContainer.GetAllCookies()));
+        private string ReplaceWithResponseCookies(string input, string match, BotData botData) => input.Replace(match, string.Join(Environment.NewLine, botData.CookieContainer.GetAllCookies()));
 
         private static string ReplaceWithVariableValue(string input, Match match, BotData botData) => botData.Variables.TryGetValue(match.Groups[1].Value, out var value) ? input.Replace(match.Value, value) : input;
     }

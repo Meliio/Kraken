@@ -12,11 +12,11 @@ namespace Kraken.Models
         public Dictionary<string, string> Variables { get; }
         public Dictionary<string, string> Captures { get; }
 
-        public BotData(BotInput input, CustomHttpClient customHttpClient)
+        public BotData(BotInput input, CustomHttpClient httpClient)
         {
             Status = BotStatus.None;
             Input = input;
-            HttpClient = customHttpClient;
+            HttpClient = httpClient;
             CookieContainer = new CookieContainer();
             Variables = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
             Captures = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);

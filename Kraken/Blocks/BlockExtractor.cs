@@ -35,8 +35,6 @@ namespace Kraken.Blocks
         {
             var result = _extractorFunctions[_extractor.Type].Invoke(ReplaceValues(_extractor.Source, botData));
 
-            result = _extractor.Prefix + result.Trim() + _extractor.Suffix;
-
             botData.Variables[_extractor.Name] = result;
 
             if (_extractor.Capture)
@@ -50,11 +48,9 @@ namespace Kraken.Blocks
         public override Task Debug(BotData botData)
         {
             Console.ForegroundColor = ConsoleColor.DarkYellow;
-            Console.WriteLine(Environment.NewLine + "<--- Executing Block EXTRACTOR --->");
+            Console.WriteLine(Environment.NewLine + "[--- Executing Block EXTRACTOR ---]");
 
             var result = _extractorFunctions[_extractor.Type].Invoke(ReplaceValues(_extractor.Source, botData));
-
-            result = _extractor.Prefix + result.Trim() + _extractor.Suffix;
 
             botData.Variables[_extractor.Name] = result;
 
@@ -65,7 +61,7 @@ namespace Kraken.Blocks
 
             Console.ForegroundColor = _extractor.Capture ? ConsoleColor.Red : ConsoleColor.Yellow;
 
-            Console.WriteLine($"Extracted variable | Name: {_extractor.Name} | Value: {result}");
+            Console.WriteLine($"Extracted variable | Name: {_extractor.Name} | Value: {result} | Captur: {_extractor.Capture}");
 
             return Task.CompletedTask;
         }
@@ -76,7 +72,7 @@ namespace Kraken.Blocks
 
             if (indexOfBegin == -1)
             {
-                return String.Empty;
+                return string.Empty;
             }
 
             source = source[(indexOfBegin + _extractor.Left.Length)..];
@@ -85,7 +81,7 @@ namespace Kraken.Blocks
 
             if (indexOfEnd == -1)
             {
-                return String.Empty;
+                return string.Empty;
             }
 
             return source[..indexOfEnd];
@@ -97,7 +93,7 @@ namespace Kraken.Blocks
 
             if (token is null)
             {
-                return String.Empty;
+                return string.Empty;
             }
 
             return token.ToString();
@@ -113,10 +109,10 @@ namespace Kraken.Blocks
 
             if (element is null)
             {
-                return String.Empty;
+                return string.Empty;
             }
 
-            return _getSelectorAttributeFunctions.ContainsKey(_extractor.Attribute) ? _getSelectorAttributeFunctions[_extractor.Attribute].Invoke(element) : element.HasAttribute(_extractor.Attribute) ? element.GetAttribute(_extractor.Attribute) : String.Empty;
+            return _getSelectorAttributeFunctions.ContainsKey(_extractor.Attribute) ? _getSelectorAttributeFunctions[_extractor.Attribute].Invoke(element) : element.HasAttribute(_extractor.Attribute) ? element.GetAttribute(_extractor.Attribute) : string.Empty;
         }
 
         private static string AttributeInnerHtml(IElement element) => element.InnerHtml;

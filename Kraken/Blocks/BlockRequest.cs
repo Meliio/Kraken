@@ -1,6 +1,7 @@
 ﻿using Kraken.Enums;
 using Kraken.Models;
 using Kraken.Models.Blocks;
+using System.Net;
 using System.Text;
 
 namespace Kraken.Blocks
@@ -42,9 +43,9 @@ namespace Kraken.Blocks
                     botData.CookieContainer.SetCookies(responseMessage.RequestMessage.RequestUri, string.Join(", ", values));
                 }
 
-                var location = responseMessage.Headers.Contains("Location") ? responseMessage.Headers.Location.IsAbsoluteUri ? responseMessage.Headers.Location : new Uri(requestMessage.RequestUri.GetLeftPart(UriPartial.Authority) + responseMessage.Headers.Location) : null;
+                var location = responseMessage.Headers.Contains("Location") ? responseMessage.Headers.Location.IsAbsoluteUri ? responseMessage.Headers.Location.AbsoluteUri : new Uri(requestMessage.RequestUri.GetLeftPart(UriPartial.Authority) + responseMessage.Headers.Location).AbsoluteUri : string.Empty;
 
-                if (location is not null && _request.AllowAutoRedirect)
+                if (!string.IsNullOrEmpty(location) && _request.AllowAutoRedirect)
                 {
                     while (true)
                     {
@@ -62,15 +63,15 @@ namespace Kraken.Blocks
                             botData.CookieContainer.SetCookies(redirecResponseMessage.RequestMessage.RequestUri, string.Join(", ", redirecValues));
                         }
 
-                        location = redirecResponseMessage.Headers.Contains("Location") ? redirecResponseMessage.Headers.Location.IsAbsoluteUri ? redirecResponseMessage.Headers.Location : new Uri(redirectRequestMessage.RequestUri.GetLeftPart(UriPartial.Authority) + redirecResponseMessage.Headers.Location) : null;
+                        location = redirecResponseMessage.Headers.Contains("Location") ? redirecResponseMessage.Headers.Location.IsAbsoluteUri ? redirecResponseMessage.Headers.Location.AbsoluteUri : new Uri(redirectRequestMessage.RequestUri.GetLeftPart(UriPartial.Authority) + redirecResponseMessage.Headers.Location).AbsoluteUri : string.Empty;
 
-                        if (location is null)
+                        if (string.IsNullOrEmpty(location))
                         {
                             botData.Variables["response.address"] = redirecResponseMessage.RequestMessage.RequestUri.AbsoluteUri;
                             botData.Variables["response.statusCode"] = ((int)redirecResponseMessage.StatusCode).ToString();
                             redirecResponseMessage.Headers.Remove("Set-Cookie");
                             botData.Variables["response.headers"] = redirecResponseMessage.Headers.ToString();
-                            botData.Variables["response.content"] = _request.LoadContent ? await redirecResponseMessage.Content.ReadAsStringAsync() : string.Empty;
+                            botData.Variables["response.content"] = _request.LoadContent ? WebUtility.HtmlDecode(await responseMessage.Content.ReadAsStringAsync()) : string.Empty;
                             break;
                         }
                     }
@@ -81,7 +82,7 @@ namespace Kraken.Blocks
                     botData.Variables["response.statusCode"] = ((int)responseMessage.StatusCode).ToString();
                     responseMessage.Headers.Remove("Set-Cookie");
                     botData.Variables["response.headers"] = responseMessage.Headers.ToString();
-                    botData.Variables["response.content"] = _request.LoadContent ? await responseMessage.Content.ReadAsStringAsync() : string.Empty;
+                    botData.Variables["response.content"] = _request.LoadContent ? WebUtility.HtmlDecode(await responseMessage.Content.ReadAsStringAsync()) : string.Empty;
                 }
             }
             catch
@@ -94,7 +95,7 @@ namespace Kraken.Blocks
         public override async Task Debug(BotData botData)
         {
             Console.ForegroundColor = ConsoleColor.DarkYellow;
-            Console.WriteLine(Environment.NewLine + "<--- Executing Block REQUEST --->");
+            Console.WriteLine(Environment.NewLine + "[--- Executing Block REQUEST ---]");
 
             using var requestMessage = new HttpRequestMessage(_request.Method, ReplaceValues(_request.Url, botData));
 
@@ -114,34 +115,33 @@ namespace Kraken.Blocks
             }
 
             Console.ForegroundColor = ConsoleColor.Cyan;
-            Console.WriteLine($"Calling URL: {requestMessage.RequestUri.AbsoluteUri}");
-
-            if (requestMessage.Method == HttpMethod.Post)
-            {
-                Console.WriteLine($"Post Data: {await requestMessage.Content.ReadAsStringAsync()}");
-            }
-
-            Console.WriteLine($"Sent Headers:");
+            Console.WriteLine($"{requestMessage.Method} {requestMessage.RequestUri.AbsoluteUri}");
 
             if (requestMessage.Headers.Any())
             {
                 Console.WriteLine(requestMessage.Headers.ToString().Trim());
             }
 
+            if (requestMessage.Method == HttpMethod.Post)
+            {
+                Console.WriteLine(await requestMessage.Content.ReadAsStringAsync());
+            }
+
             try
             {
                 using var responseMessage = await botData.HttpClient.SendAsync(requestMessage);
 
+                var cookieContainer = new CookieContainer();
+
                 if (responseMessage.Headers.TryGetValues("Set-Cookie", out var values))
                 {
                     botData.CookieContainer.SetCookies(responseMessage.RequestMessage.RequestUri, string.Join(", ", values));
+                    cookieContainer.SetCookies(responseMessage.RequestMessage.RequestUri, string.Join(", ", values));
                 }
 
-                var responseHeaders = string.Empty;
+                var location = responseMessage.Headers.Contains("Location") ? responseMessage.Headers.Location.IsAbsoluteUri ? responseMessage.Headers.Location.AbsoluteUri : new Uri(requestMessage.RequestUri.GetLeftPart(UriPartial.Authority) + responseMessage.Headers.Location).AbsoluteUri : string.Empty;
 
-                var location = responseMessage.Headers.Contains("Location") ? responseMessage.Headers.Location.IsAbsoluteUri ? responseMessage.Headers.Location : new Uri(requestMessage.RequestUri.GetLeftPart(UriPartial.Authority) + responseMessage.Headers.Location) : null;
-
-                if (location is not null && _request.AllowAutoRedirect)
+                if (!string.IsNullOrEmpty(location) && _request.AllowAutoRedirect)
                 {
                     while (true)
                     {
@@ -157,18 +157,18 @@ namespace Kraken.Blocks
                         if (redirecResponseMessage.Headers.TryGetValues("Set-Cookie", out var redirecValues))
                         {
                             botData.CookieContainer.SetCookies(redirecResponseMessage.RequestMessage.RequestUri, string.Join(", ", redirecValues));
+                            cookieContainer.SetCookies(redirecResponseMessage.RequestMessage.RequestUri, string.Join(", ", redirecValues));
                         }
 
-                        location = redirecResponseMessage.Headers.Contains("Location") ? redirecResponseMessage.Headers.Location.IsAbsoluteUri ? redirecResponseMessage.Headers.Location : new Uri(redirectRequestMessage.RequestUri.GetLeftPart(UriPartial.Authority) + redirecResponseMessage.Headers.Location) : null;
+                        location = redirecResponseMessage.Headers.Contains("Location") ? redirecResponseMessage.Headers.Location.IsAbsoluteUri ? redirecResponseMessage.Headers.Location.AbsoluteUri : new Uri(redirectRequestMessage.RequestUri.GetLeftPart(UriPartial.Authority) + redirecResponseMessage.Headers.Location).AbsoluteUri : string.Empty;
 
-                        if (location is null)
+                        if (string.IsNullOrEmpty(location))
                         {
                             botData.Variables["response.address"] = redirecResponseMessage.RequestMessage.RequestUri.AbsoluteUri;
                             botData.Variables["response.statusCode"] = ((int)redirecResponseMessage.StatusCode).ToString();
-                            responseHeaders = redirecResponseMessage.Headers.ToString();
                             redirecResponseMessage.Headers.Remove("Set-Cookie");
                             botData.Variables["response.headers"] = redirecResponseMessage.Headers.ToString();
-                            botData.Variables["response.content"] = _request.LoadContent ? await redirecResponseMessage.Content.ReadAsStringAsync() : string.Empty;
+                            botData.Variables["response.content"] = _request.LoadContent ? WebUtility.HtmlDecode(await redirecResponseMessage.Content.ReadAsStringAsync()) : string.Empty;                         
                             break;
                         }
                     }
@@ -177,24 +177,21 @@ namespace Kraken.Blocks
                 {
                     botData.Variables["response.address"] = responseMessage.RequestMessage.RequestUri.AbsoluteUri;
                     botData.Variables["response.statusCode"] = ((int)responseMessage.StatusCode).ToString();
-                    responseHeaders = responseMessage.Headers.ToString();
                     responseMessage.Headers.Remove("Set-Cookie");
                     botData.Variables["response.headers"] = responseMessage.Headers.ToString();
-                    botData.Variables["response.content"] = _request.LoadContent ? await responseMessage.Content.ReadAsStringAsync() : string.Empty;
+                    botData.Variables["response.content"] = _request.LoadContent ? WebUtility.HtmlDecode(await responseMessage.Content.ReadAsStringAsync()) : string.Empty;
                 }
 
-                Console.WriteLine($"{Environment.NewLine}Address: {botData.Variables["response.address"]}");
-                Console.WriteLine($"Response code: {botData.Variables["response.statusCode"]}");
+                Console.WriteLine($"{Environment.NewLine}{botData.Variables["response.address"]} {botData.Variables["response.statusCode"]}");
 
-                Console.ForegroundColor = ConsoleColor.DarkMagenta;
-                Console.WriteLine("Received headers:");
                 Console.ForegroundColor = ConsoleColor.Magenta;
-                Console.WriteLine(responseHeaders.Trim());
+                Console.WriteLine(botData.Variables["response.headers"]);
+
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine(string.Join(Environment.NewLine, cookieContainer.GetAllCookies().Select(c => $"{c.Name}: {c.Value}")));
 
                 Console.ForegroundColor = ConsoleColor.DarkGreen;
-                Console.WriteLine("Response Source:");
-                Console.ForegroundColor = ConsoleColor.Green;
-                Console.WriteLine(_request.LoadContent ? await responseMessage.Content.ReadAsStringAsync() : "[SKIPPED]");
+                Console.WriteLine(_request.LoadContent ? botData.Variables["response.content"] : "[SKIPPED]");
             }
             catch
             {

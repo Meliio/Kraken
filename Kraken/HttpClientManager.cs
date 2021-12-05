@@ -11,14 +11,7 @@ namespace Kraken
 
         public HttpClientManager()
         {
-            var httpClientHandler = new HttpClientHandler()
-            {
-                AllowAutoRedirect = false,
-                AutomaticDecompression = DecompressionMethods.All,
-                UseCookies = false
-            };
-
-            var httpClient = new CustomHttpClient(httpClientHandler)
+            var httpClient = new CustomHttpClient(BuildHttpClientHandler())
             { 
                 Timeout = TimeSpan.FromSeconds(10) 
             };
@@ -31,7 +24,7 @@ namespace Kraken
         {
             var proxyClients = proxies.Select(p => BuildProxyClient(p, proxyType));
 
-            var httpClientHandlers = proxyClients.Select(p => BuildPRoxyHttpClientHandler(p));
+            var httpClientHandlers = proxyClients.Select(p => BuildHttpClientHandler(p));
 
             var httpClients = httpClientHandlers.Select(h => new CustomHttpClient(h)
             {
@@ -44,19 +37,22 @@ namespace Kraken
 
         public CustomHttpClient GetRandomHttpClient()
         {
-            var httpClients = _httpClients.Where(h => h.IsValid);
-
-            if (httpClients.Any())
+            lock (_httpClients)
             {
-                return httpClients.ElementAt(_random.Next(httpClients.Count()));
-            }
+                var httpClients = _httpClients.Where(h => h.IsValid);
 
-            foreach (var httpClient in _httpClients)
-            {
-                httpClient.IsValid = true;
-            }
+                if (httpClients.Any())
+                {
+                    return httpClients.ElementAt(_random.Next(httpClients.Count()));
+                }
 
-            return _httpClients[_random.Next(_httpClients.Length)];
+                foreach (var httpClient in _httpClients)
+                {
+                    httpClient.IsValid = true;
+                }
+
+                return _httpClients[_random.Next(_httpClients.Length)];
+            }
         }
 
         private static ProxyClient BuildProxyClient(string proxy, ProxyType proxyType)
@@ -73,12 +69,12 @@ namespace Kraken
             return proxyClient;
         }
 
-        private static HttpClientHandler BuildPRoxyHttpClientHandler(ProxyClient proxyClient) => new()
+        private static HttpClientHandler BuildHttpClientHandler(ProxyClient? proxyClient = null) => new()
         {
             AllowAutoRedirect = false,
             AutomaticDecompression = DecompressionMethods.All,
             Proxy = proxyClient,
-            UseCookies = false
+            UseCookies = false,         
         };
     }
 }

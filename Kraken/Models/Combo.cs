@@ -2,9 +2,8 @@
 {
     public class Combo
     {
-        public string Username { get; }
-        public string Password { get; }
-        public bool IsValid { get; }
+        public string Username { get; } = string.Empty;
+        public string Password { get; } = string.Empty;
 
         public Combo(string combo)
         {
@@ -14,7 +13,6 @@
             {
                 Username = comboSplit[0];
                 Password = comboSplit[1];
-                IsValid = true;
             }
         }
     }

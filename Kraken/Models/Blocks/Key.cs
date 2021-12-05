@@ -7,6 +7,6 @@ namespace Kraken.Models.Blocks
         public string Source { get; set; } = "<response.content>";
         public string Condition { get; set; } = "contains";
         [JsonProperty("key")]
-        public string Value { get; set; } = String.Empty;
+        public string Value { get; set; } = string.Empty;
     }
 }
