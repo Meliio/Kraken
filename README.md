@@ -64,3 +64,5 @@ blocks:
               key: AUTH_OK
       otherwiseBan: true
 ```
+### Debug
+![debug screen](https://github.com/Meliio/Kraken/blob/main/screen.png)
