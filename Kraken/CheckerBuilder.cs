@@ -56,9 +56,9 @@ namespace Kraken
 
             var blocks = BuildBlocks(config.GetValue("blocks"));
 
-            var botInputs = File.ReadAllLines(_wordlistFile).Select(w => new BotInput(w));
+            var botInputs = File.ReadAllLines(_wordlistFile).Where(w => !string.IsNullOrEmpty(w)).Select(w => new BotInput(w));
 
-            var httpClientManager = _proxiesFile.Any() ? new HttpClientManager(File.ReadAllLines(_proxiesFile.First()), _proxiesFile.Count() == 2 ? Enum.Parse<ProxyType>(_proxiesFile.ElementAt(1), true) : ProxyType.Http) : new HttpClientManager();
+            var httpClientManager = _proxiesFile.Any() ? new HttpClientManager(File.ReadAllLines(_proxiesFile.First()).Where(p => !string.IsNullOrEmpty(p)), _proxiesFile.Count() == 2 ? Enum.Parse<ProxyType>(_proxiesFile.ElementAt(1), true) : ProxyType.Http) : new HttpClientManager();
 
             var krakenSettings = JsonConvert.DeserializeObject<KrakenSettings>(File.ReadAllText("settings.json"));
 

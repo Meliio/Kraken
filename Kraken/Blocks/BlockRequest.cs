@@ -182,17 +182,25 @@ namespace Kraken.Blocks
                     botData.Variables["response.content"] = _request.LoadContent ? WebUtility.HtmlDecode(await responseMessage.Content.ReadAsStringAsync()) : string.Empty;
                 }
 
-                Console.WriteLine($"{Environment.NewLine}{botData.Variables["response.address"]} {botData.Variables["response.statusCode"]}");
+                Console.Write(Environment.NewLine);
 
+                Console.WriteLine($"Address: {botData.Variables["response.address"]}");
+                Console.WriteLine($"Response code: {botData.Variables["response.statusCode"]}");
+
+                Console.ForegroundColor = ConsoleColor.DarkMagenta;
+                Console.WriteLine("Received headers:");
                 Console.ForegroundColor = ConsoleColor.Magenta;
-                Console.WriteLine(botData.Variables["response.headers"].Trim());
+                Console.Write(botData.Variables["response.headers"]);
 
+                Console.ForegroundColor = ConsoleColor.DarkYellow;
+                Console.WriteLine("Received cookies:");
                 Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine(string.Join(Environment.NewLine, cookieContainer.GetAllCookies().Select(c => $"{c.Name}: {c.Value}")));
+                Console.WriteLine(string.Join(Environment.NewLine, cookieContainer.GetAllCookies().Select(c => $"{c.Name}: {c.Value}")).Trim());
 
                 Console.ForegroundColor = ConsoleColor.DarkGreen;
                 Console.WriteLine(_request.LoadContent ? botData.Variables["response.content"] : "[SKIPPED]");
-                Console.WriteLine();
+
+                Console.Write(Environment.NewLine);
             }
             catch
             {

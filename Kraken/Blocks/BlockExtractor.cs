@@ -63,7 +63,7 @@ namespace Kraken.Blocks
 
             Console.WriteLine($"Extracted variable | Name: {_extractor.Name} | Value: {result} | Capture: {_extractor.Capture}");
 
-            Console.WriteLine();
+            Console.Write(Environment.NewLine);
 
             return Task.CompletedTask;
         }

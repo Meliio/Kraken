@@ -9,13 +9,13 @@ namespace Kraken
     public class RunOptions
     {
         [Option('c', "config", Required = true)]
-        public string ConfigFile { get; set; }
+        public string ConfigFile { get; set; } = string.Empty;
 
         [Option('w', "wordlist", Required = true)]
-        public string WordlistFile { get; set; }
+        public string WordlistFile { get; set; } = string.Empty;
 
         [Option('p', "proxies")]
-        public IEnumerable<string> ProxiesFile { get; set; }
+        public IEnumerable<string> ProxiesFile { get; set; } = Array.Empty<string>();
 
         [Option('s', "skip")]
         public int Skip { get; set; }
@@ -28,13 +28,13 @@ namespace Kraken
     public class DebugOptions
     {
         [Option('c', "config", Required = true)]
-        public string ConfigFile { get; set; }
+        public string ConfigFile { get; set; } = string.Empty;
 
         [Option('i', "input")]
         public string BotInput { get; set; } = string.Empty;
 
         [Option('p', "proxy")]
-        public IEnumerable<string> Proxy { get; set; }
+        public IEnumerable<string> Proxy { get; set; } = Array.Empty<string>();
     }
 
     public class Program

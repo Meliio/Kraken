@@ -33,11 +33,8 @@ namespace Kraken.Blocks
 
                 if (keychain.Condition.Equals("or", StringComparison.OrdinalIgnoreCase) ? results.Any(r => r) : results.All(r => r))
                 {
-                    if (Enum.TryParse<BotStatus>(keychain.Status, true, out var status))
-                    {
-                        botData.Status = status;
-                        success = true;
-                    }
+                    botData.Status = Enum.Parse<BotStatus>(keychain.Status, true);
+                    success = true;
                 }
             }
 
@@ -74,20 +71,17 @@ namespace Kraken.Blocks
 
                 if (keychain.Condition.Equals("or", StringComparison.OrdinalIgnoreCase) ? results.Any(r => r.Item1) : results.All(r => r.Item1))
                 {
-                    if (Enum.TryParse<BotStatus>(keychain.Status, true, out var status))
+                    botData.Status = Enum.Parse<BotStatus>(keychain.Status, true);
+                    success = true;
+
+                    Console.ForegroundColor = ConsoleColor.White;
+
+                    foreach (var result in results.Where(r => r.Item1))
                     {
-                        botData.Status = status;
-                        success = true;
-
-                        Console.ForegroundColor = ConsoleColor.White;
-
-                        foreach (var result in results.Where(r => r.Item1))
-                        {
-                            Console.WriteLine($"Found '{keychain.Condition.ToUpper()}' Key {(result.Item4.Length < 30 ? result.Item4 : $"{result.Item4[..30].Replace("\n", string.Empty)} [...]")} {result.Item3.Replace("\n", string.Empty)} {result.Item2}");
-                        }
-
-                        Console.WriteLine();
+                        Console.WriteLine($"Found '{keychain.Condition.ToUpper()}' Key {(result.Item4.Length < 30 ? result.Item4.Replace("\n", string.Empty) : $"{result.Item4[..30].Replace("\n", string.Empty)} [...]")} {result.Item3} {result.Item2}");
                     }
+
+                    Console.Write(Environment.NewLine);
                 }
             }
 
