@@ -68,3 +68,6 @@ blocks:
 ```
 ### Debug
 ![debug screen](https://github.com/Meliio/Kraken/blob/main/screen.png)
+
+### Tips
+[Use yaml formatter](https://jsonformatter.org/yaml-formatter)
