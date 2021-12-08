@@ -2,6 +2,12 @@
 
 Kraken is a tool for brute force or credential stuffing attacks high performance
 
+## Features
+* multithreading
+* proxy http, sock4 and sock5 support
+* saving the progress of the checker
+* automatic banning of proxies if not working or bot status ends with ban
+
 ## Getting Started
 
 download [release](https://github.com/Meliio/Kraken/releases)
