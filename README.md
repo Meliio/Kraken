@@ -27,6 +27,104 @@ open a cmd then write "cd {path where kraken.exe is located}" and "kraken.exe --
 
 ### Example
 
+##### Request
+
+```yaml
+blocks:
+  - request:
+      redirect: true
+      raw: |
+         GET /login
+         Host: example.com
+         User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36
+         Pragma: no-cache
+         Accept: */*
+      loadContent: true
+```
+
+##### Extractor
+
+```yaml
+blocks:
+  - extractor:
+      type: ls
+      name: token
+      left: ''
+      right: ''
+      source: <response.content>
+      capture: false
+```
+
+```yaml
+blocks:
+  - extractor:
+      type: css
+      name: token
+      selector: ''
+      attribute: ''
+      source: <response.content>
+      capture: false
+```
+
+```yaml
+blocks:
+  - extractor:
+      type: json
+      name: token
+      json: ''
+      source: <response.content>
+      capture: false
+```
+
+```yaml
+blocks:
+  - extractor:
+      type: regex
+      name: token
+      regex: ''
+      group: ''
+      source: <response.content>
+      capture: false
+```
+
+##### Keycheck
+
+```yaml
+blocks:
+  - keycheck:
+      keychains:
+        - status: failure
+          condition: or
+          keys:
+            - source: <response.content>
+              condition: contains
+              key:  ''
+        - status: success
+          condition: or
+          keys:
+            - source: <response.content>
+              condition: contains
+              key: ''
+      banOnToCheck: true
+```
+
+```yaml
+blocks:
+  - keycheck:
+      keychains:
+        - status: free
+          condition: and
+          keys:
+            - source: <response.content>
+              condition: contains
+              key:  ''
+            - source: <response.content>
+              condition: equals
+              key:  ''
+      banOnToCheck: true
+```
+
+##### Config
 ```yaml
 settings:
   name: example
