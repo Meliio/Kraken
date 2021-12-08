@@ -18,8 +18,10 @@ open a cmd then write "cd {path where kraken.exe is located}" and "kraken.exe --
 | ---------------- | ---------------------------------------------------------- | --------------------------------------------|
 | -c               | yaml file of the config                                    | kraken.exe -c config.yaml                   |
 | -w               | wordlist file                                              | kraken.exe -w wordlist.txt                  |
-| -p               | proxies file                                               | kraken.exe -p proxies.txt                   |
+| -p               | proxies file                                               | kraken.exe -p proxies.txt http              |
+| -s               | skip                                                       | kraken.exe -s 50                            |
 | -b               | number of bots                                             | kraken.exe -b 10                            |
+| -v               | verbose                                                    | kraken.exe -v true                          |
 
 ### Example
 
@@ -34,10 +36,10 @@ blocks:
          Pragma: no-cache
          Accept: */*
   - extractor:
-      type: css
+      type: ls
       name: token
-      selector: input[name="login_token"]
-      attribute: value
+      left: 'name=login_token value="'
+      right: '"'
       source: <response.content>
       capture: false
   - request:
@@ -62,7 +64,7 @@ blocks:
             - source: <response.content>
               condition: contains
               key: AUTH_OK
-      otherwiseBan: true
+      banOnToCheck: true
 ```
 ### Debug
 ![debug screen](https://github.com/Meliio/Kraken/blob/main/screen.png)
