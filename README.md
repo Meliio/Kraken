@@ -7,6 +7,8 @@ Kraken is a tool for brute force or credential stuffing attacks high performance
 download [release](https://github.com/Meliio/Kraken/releases)
 open a cmd then write "cd {path where kraken.exe is located}" and "kraken.exe --help"
 
+[tip use yaml formatter](https://jsonformatter.org/yaml-formatter)
+
 ### Prerequisite
 
 [.NET Runtime 6.0.0](https://dotnet.microsoft.com/download/dotnet/6.0)
@@ -68,6 +70,3 @@ blocks:
 ```
 ### Debug
 ![debug screen](https://github.com/Meliio/Kraken/blob/main/screen.png)
-
-### Tips
-[Use yaml formatter](https://jsonformatter.org/yaml-formatter)
