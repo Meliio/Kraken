@@ -15,7 +15,7 @@ namespace Kraken
         public string WordlistFile { get; set; } = string.Empty;
 
         [Option('p', "proxies")]
-        public IEnumerable<string> ProxiesFile { get; set; } = Array.Empty<string>();
+        public IEnumerable<string> Proxies { get; set; } = Array.Empty<string>();
 
         [Option('s', "skip")]
         public int Skip { get; set; }
@@ -73,7 +73,7 @@ namespace Kraken
 
         private static async Task Run(RunOptions options)
         {
-            var checker = new CheckerBuilder(options.ConfigFile, options.WordlistFile, options.ProxiesFile, options.Skip, options.Bots, options.Verbose).Build();
+            var checker = new CheckerBuilder(options.ConfigFile, options.WordlistFile, options.Proxies, options.Skip, options.Bots, options.Verbose).Build();
 
             var consoleManager = new ConsoleManager(checker);
 

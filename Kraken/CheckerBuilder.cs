@@ -13,17 +13,17 @@ namespace Kraken
     {
         private readonly string _configFile;
         private readonly string _wordlistFile;
-        private readonly IEnumerable<string> _proxiesFile;
+        private readonly IEnumerable<string> _proxies;
         private readonly int _skip;
         private readonly int _bots;
         private readonly bool _verbose;
         private readonly Dictionary<string, Func<string, Block>> _buildBlockFunctions;
 
-        public CheckerBuilder(string configFile, string wordlistFile, IEnumerable<string> proxiesFile, int skip, int bots, bool verbose)
+        public CheckerBuilder(string configFile, string wordlistFile, IEnumerable<string> proxies, int skip, int bots, bool verbose)
         {
             _configFile = configFile;
             _wordlistFile = wordlistFile;
-            _proxiesFile = proxiesFile;
+            _proxies = proxies;
             _skip = skip;
             _bots = bots;
             _verbose = verbose;
@@ -60,7 +60,7 @@ namespace Kraken
 
             var botInputs = File.ReadAllLines(_wordlistFile).Where(w => !string.IsNullOrEmpty(w)).Select(w => new BotInput(w));
 
-            var httpClientManager = _proxiesFile.Any() ? new HttpClientManager(File.ReadAllLines(_proxiesFile.First()).Where(p => !string.IsNullOrEmpty(p)), _proxiesFile.Count() == 2 ? Enum.Parse<ProxyType>(_proxiesFile.ElementAt(1), true) : ProxyType.Http) : new HttpClientManager();
+            var httpClientManager = _proxies.Any() ? new HttpClientManager(File.ReadAllLines(_proxies.First()).Where(p => !string.IsNullOrEmpty(p)), _proxies.Count() == 2 ? Enum.Parse<ProxyType>(_proxies.ElementAt(1), true) : ProxyType.Http) : new HttpClientManager();
 
             var parallelOptions = new ParallelOptions()
             {
