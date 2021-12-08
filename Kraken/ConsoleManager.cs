@@ -32,6 +32,10 @@ namespace Kraken
                     .Append(_checker.Stats.Retry)
                     .Append(" Ban: ")
                     .Append(_checker.Stats.Ban)
+                    .Append(" Error: ")
+                    .Append(_checker.Stats.Error)
+                    .Append(" Proxies: ")
+                    .Append(_checker.Stats.ProxiesAlive)
                     .Append(" [ CPM ")
                     .Append(_checker.Stats.Cpm)
                     .Append(" ]");

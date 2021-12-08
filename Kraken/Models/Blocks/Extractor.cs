@@ -4,8 +4,6 @@
     {
         public string Type { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
-        public string Prefix { get; set; } = string.Empty;
-        public string Suffix { get; set; } = string.Empty;
         public string Left { get; set; } = string.Empty;
         public string Right { get; set; } = string.Empty;
         public string Json { get; set; } = string.Empty;

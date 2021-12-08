@@ -10,9 +10,12 @@
         public int Failure => _failure;
         public int Retry => _retry;
         public int Ban => _ban;
+        public int Error => _error;
         public int Checked => _checked;
+        public int ProxiesAlive => _proxiesAlive;
         public int Cpm { get; set; }
 
+        private readonly int _proxyesLenght;
         private readonly int _checkPoint;
 
         private int _toCheck;
@@ -21,20 +24,36 @@
         private int _failure;
         private int _retry;
         private int _ban;
+        private int _error;
         private int _checked;
+        private int _proxiesAlive;
 
-        public CheckerStats(int wordlistLenght, int checkPoint)
+        public CheckerStats(int wordlistLenght, int proxiesLenght, int checkPoint)
         {
             WordlistLenght = wordlistLenght;
+            _proxyesLenght = proxiesLenght;
+            _proxiesAlive = proxiesLenght;
             _checkPoint = checkPoint;
         }
 
-        public int IncrementToCheck() => Interlocked.Increment(ref _toCheck);
-        public int IncrementSuccess() => Interlocked.Increment(ref _success);
-        public int IncrementFree() => Interlocked.Increment(ref _free);
-        public int IncrementFailure() => Interlocked.Increment(ref _failure);
-        public int IncrementRetry() => Interlocked.Increment(ref _retry);
-        public int IncrementBan() => Interlocked.Increment(ref _ban);
-        public int IncrementChecked() => Interlocked.Increment(ref _checked);
+        public void IncrementToCheck() => Interlocked.Increment(ref _toCheck);
+        public void IncrementSuccess() => Interlocked.Increment(ref _success);
+        public void IncrementFree() => Interlocked.Increment(ref _free);
+        public void IncrementFailure() => Interlocked.Increment(ref _failure);
+        public void IncrementRetry() => Interlocked.Increment(ref _retry);
+        public void IncrementBan() => Interlocked.Increment(ref _ban);
+        public void IncrementError() => Interlocked.Increment(ref _error);
+        public void IncrementChecked() => Interlocked.Increment(ref _checked);
+        public void DecrementProxiesAlive()
+        {
+            if (_proxiesAlive == 1)
+            {
+                _proxiesAlive = _proxyesLenght;
+            }
+            else
+            {
+                Interlocked.Decrement(ref _proxiesAlive);
+            }
+        }
     }
 }

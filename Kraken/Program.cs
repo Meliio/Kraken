@@ -22,6 +22,9 @@ namespace Kraken
 
         [Option('b', "bots", Default = 1)]
         public int Bots { get; set; }
+
+        [Option('v', "verbose", Default = false)]
+        public bool Verbose { get; set; }
     }
 
     [Verb("debug")]
@@ -70,7 +73,7 @@ namespace Kraken
 
         private static async Task Run(RunOptions options)
         {
-            var checker = new CheckerBuilder(options.ConfigFile, options.WordlistFile, options.ProxiesFile, options.Skip, options.Bots).Build();
+            var checker = new CheckerBuilder(options.ConfigFile, options.WordlistFile, options.ProxiesFile, options.Skip, options.Bots, options.Verbose).Build();
 
             var consoleManager = new ConsoleManager(checker);
 

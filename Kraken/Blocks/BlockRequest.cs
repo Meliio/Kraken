@@ -34,61 +34,53 @@ namespace Kraken.Blocks
                 requestMessage.Content = new StringContent(ReplaceValues(_request.Content, botData), Encoding.UTF8, _request.Headers["Content-Type"]);
             }
 
-            try
+            using var responseMessage = await botData.HttpClient.SendAsync(requestMessage);
+
+            if (responseMessage.Headers.TryGetValues("Set-Cookie", out var values))
             {
-                using var responseMessage = await botData.HttpClient.SendAsync(requestMessage);
+                botData.CookieContainer.SetCookies(responseMessage.RequestMessage.RequestUri, string.Join(", ", values));
+            }
 
-                if (responseMessage.Headers.TryGetValues("Set-Cookie", out var values))
+            var location = responseMessage.Headers.Contains("Location") ? responseMessage.Headers.Location.IsAbsoluteUri ? responseMessage.Headers.Location.AbsoluteUri : new Uri(requestMessage.RequestUri.GetLeftPart(UriPartial.Authority) + responseMessage.Headers.Location).AbsoluteUri : string.Empty;
+
+            if (!string.IsNullOrEmpty(location) && _request.AllowAutoRedirect)
+            {
+                while (true)
                 {
-                    botData.CookieContainer.SetCookies(responseMessage.RequestMessage.RequestUri, string.Join(", ", values));
-                }
+                    using var redirectRequestMessage = new HttpRequestMessage(HttpMethod.Get, location);
 
-                var location = responseMessage.Headers.Contains("Location") ? responseMessage.Headers.Location.IsAbsoluteUri ? responseMessage.Headers.Location.AbsoluteUri : new Uri(requestMessage.RequestUri.GetLeftPart(UriPartial.Authority) + responseMessage.Headers.Location).AbsoluteUri : string.Empty;
-
-                if (!string.IsNullOrEmpty(location) && _request.AllowAutoRedirect)
-                {
-                    while (true)
+                    if (!string.IsNullOrEmpty(botData.CookieContainer.GetCookieHeader(redirectRequestMessage.RequestUri)))
                     {
-                        using var redirectRequestMessage = new HttpRequestMessage(HttpMethod.Get, location);
+                        redirectRequestMessage.Headers.Add("Cookie", botData.CookieContainer.GetCookieHeader(redirectRequestMessage.RequestUri));
+                    }
 
-                        if (!string.IsNullOrEmpty(botData.CookieContainer.GetCookieHeader(redirectRequestMessage.RequestUri)))
-                        {
-                            redirectRequestMessage.Headers.Add("Cookie", botData.CookieContainer.GetCookieHeader(redirectRequestMessage.RequestUri));
-                        }
+                    using var redirecResponseMessage = await botData.HttpClient.SendAsync(redirectRequestMessage);
 
-                        using var redirecResponseMessage = await botData.HttpClient.SendAsync(redirectRequestMessage);
+                    if (redirecResponseMessage.Headers.TryGetValues("Set-Cookie", out var redirecValues))
+                    {
+                        botData.CookieContainer.SetCookies(redirecResponseMessage.RequestMessage.RequestUri, string.Join(", ", redirecValues));
+                    }
 
-                        if (redirecResponseMessage.Headers.TryGetValues("Set-Cookie", out var redirecValues))
-                        {
-                            botData.CookieContainer.SetCookies(redirecResponseMessage.RequestMessage.RequestUri, string.Join(", ", redirecValues));
-                        }
+                    location = redirecResponseMessage.Headers.Contains("Location") ? redirecResponseMessage.Headers.Location.IsAbsoluteUri ? redirecResponseMessage.Headers.Location.AbsoluteUri : new Uri(redirectRequestMessage.RequestUri.GetLeftPart(UriPartial.Authority) + redirecResponseMessage.Headers.Location).AbsoluteUri : string.Empty;
 
-                        location = redirecResponseMessage.Headers.Contains("Location") ? redirecResponseMessage.Headers.Location.IsAbsoluteUri ? redirecResponseMessage.Headers.Location.AbsoluteUri : new Uri(redirectRequestMessage.RequestUri.GetLeftPart(UriPartial.Authority) + redirecResponseMessage.Headers.Location).AbsoluteUri : string.Empty;
-
-                        if (string.IsNullOrEmpty(location))
-                        {
-                            botData.Variables["response.address"] = redirecResponseMessage.RequestMessage.RequestUri.AbsoluteUri;
-                            botData.Variables["response.statusCode"] = ((int)redirecResponseMessage.StatusCode).ToString();
-                            redirecResponseMessage.Headers.Remove("Set-Cookie");
-                            botData.Variables["response.headers"] = redirecResponseMessage.Headers.ToString();
-                            botData.Variables["response.content"] = _request.LoadContent ? WebUtility.HtmlDecode(await responseMessage.Content.ReadAsStringAsync()) : string.Empty;
-                            break;
-                        }
+                    if (string.IsNullOrEmpty(location))
+                    {
+                        botData.Variables["response.address"] = redirecResponseMessage.RequestMessage.RequestUri.AbsoluteUri;
+                        botData.Variables["response.statusCode"] = ((int)redirecResponseMessage.StatusCode).ToString();
+                        redirecResponseMessage.Headers.Remove("Set-Cookie");
+                        botData.Variables["response.headers"] = redirecResponseMessage.Headers.ToString();
+                        botData.Variables["response.content"] = _request.LoadContent ? WebUtility.HtmlDecode(await responseMessage.Content.ReadAsStringAsync()) : string.Empty;
+                        break;
                     }
                 }
-                else
-                {
-                    botData.Variables["response.address"] = responseMessage.RequestMessage.RequestUri.AbsoluteUri;
-                    botData.Variables["response.statusCode"] = ((int)responseMessage.StatusCode).ToString();
-                    responseMessage.Headers.Remove("Set-Cookie");
-                    botData.Variables["response.headers"] = responseMessage.Headers.ToString();
-                    botData.Variables["response.content"] = _request.LoadContent ? WebUtility.HtmlDecode(await responseMessage.Content.ReadAsStringAsync()) : string.Empty;
-                }
             }
-            catch
+            else
             {
-                botData.HttpClient.IsValid = false;
-                botData.Status = BotStatus.Retry;
+                botData.Variables["response.address"] = responseMessage.RequestMessage.RequestUri.AbsoluteUri;
+                botData.Variables["response.statusCode"] = ((int)responseMessage.StatusCode).ToString();
+                responseMessage.Headers.Remove("Set-Cookie");
+                botData.Variables["response.headers"] = responseMessage.Headers.ToString();
+                botData.Variables["response.content"] = _request.LoadContent ? WebUtility.HtmlDecode(await responseMessage.Content.ReadAsStringAsync()) : string.Empty;
             }
         }
 
@@ -127,86 +119,78 @@ namespace Kraken.Blocks
                 Console.WriteLine(await requestMessage.Content.ReadAsStringAsync());
             }
 
-            try
+            using var responseMessage = await botData.HttpClient.SendAsync(requestMessage);
+
+            var cookieContainer = new CookieContainer();
+
+            if (responseMessage.Headers.TryGetValues("Set-Cookie", out var values))
             {
-                using var responseMessage = await botData.HttpClient.SendAsync(requestMessage);
+                botData.CookieContainer.SetCookies(responseMessage.RequestMessage.RequestUri, string.Join(", ", values));
+                cookieContainer.SetCookies(responseMessage.RequestMessage.RequestUri, string.Join(", ", values));
+            }
 
-                var cookieContainer = new CookieContainer();
+            var location = responseMessage.Headers.Contains("Location") ? responseMessage.Headers.Location.IsAbsoluteUri ? responseMessage.Headers.Location.AbsoluteUri : new Uri(requestMessage.RequestUri.GetLeftPart(UriPartial.Authority) + responseMessage.Headers.Location).AbsoluteUri : string.Empty;
 
-                if (responseMessage.Headers.TryGetValues("Set-Cookie", out var values))
+            if (!string.IsNullOrEmpty(location) && _request.AllowAutoRedirect)
+            {
+                while (true)
                 {
-                    botData.CookieContainer.SetCookies(responseMessage.RequestMessage.RequestUri, string.Join(", ", values));
-                    cookieContainer.SetCookies(responseMessage.RequestMessage.RequestUri, string.Join(", ", values));
-                }
+                    using var redirectRequestMessage = new HttpRequestMessage(HttpMethod.Get, location);
 
-                var location = responseMessage.Headers.Contains("Location") ? responseMessage.Headers.Location.IsAbsoluteUri ? responseMessage.Headers.Location.AbsoluteUri : new Uri(requestMessage.RequestUri.GetLeftPart(UriPartial.Authority) + responseMessage.Headers.Location).AbsoluteUri : string.Empty;
-
-                if (!string.IsNullOrEmpty(location) && _request.AllowAutoRedirect)
-                {
-                    while (true)
+                    if (!string.IsNullOrEmpty(botData.CookieContainer.GetCookieHeader(redirectRequestMessage.RequestUri)))
                     {
-                        using var redirectRequestMessage = new HttpRequestMessage(HttpMethod.Get, location);
+                        redirectRequestMessage.Headers.Add("Cookie", botData.CookieContainer.GetCookieHeader(redirectRequestMessage.RequestUri));
+                    }
 
-                        if (!string.IsNullOrEmpty(botData.CookieContainer.GetCookieHeader(redirectRequestMessage.RequestUri)))
-                        {
-                            redirectRequestMessage.Headers.Add("Cookie", botData.CookieContainer.GetCookieHeader(redirectRequestMessage.RequestUri));
-                        }
+                    using var redirecResponseMessage = await botData.HttpClient.SendAsync(redirectRequestMessage);
 
-                        using var redirecResponseMessage = await botData.HttpClient.SendAsync(redirectRequestMessage);
+                    if (redirecResponseMessage.Headers.TryGetValues("Set-Cookie", out var redirecValues))
+                    {
+                        botData.CookieContainer.SetCookies(redirecResponseMessage.RequestMessage.RequestUri, string.Join(", ", redirecValues));
+                        cookieContainer.SetCookies(redirecResponseMessage.RequestMessage.RequestUri, string.Join(", ", redirecValues));
+                    }
 
-                        if (redirecResponseMessage.Headers.TryGetValues("Set-Cookie", out var redirecValues))
-                        {
-                            botData.CookieContainer.SetCookies(redirecResponseMessage.RequestMessage.RequestUri, string.Join(", ", redirecValues));
-                            cookieContainer.SetCookies(redirecResponseMessage.RequestMessage.RequestUri, string.Join(", ", redirecValues));
-                        }
+                    location = redirecResponseMessage.Headers.Contains("Location") ? redirecResponseMessage.Headers.Location.IsAbsoluteUri ? redirecResponseMessage.Headers.Location.AbsoluteUri : new Uri(redirectRequestMessage.RequestUri.GetLeftPart(UriPartial.Authority) + redirecResponseMessage.Headers.Location).AbsoluteUri : string.Empty;
 
-                        location = redirecResponseMessage.Headers.Contains("Location") ? redirecResponseMessage.Headers.Location.IsAbsoluteUri ? redirecResponseMessage.Headers.Location.AbsoluteUri : new Uri(redirectRequestMessage.RequestUri.GetLeftPart(UriPartial.Authority) + redirecResponseMessage.Headers.Location).AbsoluteUri : string.Empty;
-
-                        if (string.IsNullOrEmpty(location))
-                        {
-                            botData.Variables["response.address"] = redirecResponseMessage.RequestMessage.RequestUri.AbsoluteUri;
-                            botData.Variables["response.statusCode"] = ((int)redirecResponseMessage.StatusCode).ToString();
-                            redirecResponseMessage.Headers.Remove("Set-Cookie");
-                            botData.Variables["response.headers"] = redirecResponseMessage.Headers.ToString();
-                            botData.Variables["response.content"] = _request.LoadContent ? WebUtility.HtmlDecode(await redirecResponseMessage.Content.ReadAsStringAsync()) : string.Empty;                         
-                            break;
-                        }
+                    if (string.IsNullOrEmpty(location))
+                    {
+                        botData.Variables["response.address"] = redirecResponseMessage.RequestMessage.RequestUri.AbsoluteUri;
+                        botData.Variables["response.statusCode"] = ((int)redirecResponseMessage.StatusCode).ToString();
+                        redirecResponseMessage.Headers.Remove("Set-Cookie");
+                        botData.Variables["response.headers"] = redirecResponseMessage.Headers.ToString();
+                        botData.Variables["response.content"] = _request.LoadContent ? WebUtility.HtmlDecode(await redirecResponseMessage.Content.ReadAsStringAsync()) : string.Empty;
+                        break;
                     }
                 }
-                else
-                {
-                    botData.Variables["response.address"] = responseMessage.RequestMessage.RequestUri.AbsoluteUri;
-                    botData.Variables["response.statusCode"] = ((int)responseMessage.StatusCode).ToString();
-                    responseMessage.Headers.Remove("Set-Cookie");
-                    botData.Variables["response.headers"] = responseMessage.Headers.ToString();
-                    botData.Variables["response.content"] = _request.LoadContent ? WebUtility.HtmlDecode(await responseMessage.Content.ReadAsStringAsync()) : string.Empty;
-                }
-
-                Console.Write(Environment.NewLine);
-
-                Console.WriteLine($"Address: {botData.Variables["response.address"]}");
-                Console.WriteLine($"Response code: {botData.Variables["response.statusCode"]}");
-
-                Console.ForegroundColor = ConsoleColor.DarkMagenta;
-                Console.WriteLine("Received headers:");
-                Console.ForegroundColor = ConsoleColor.Magenta;
-                Console.Write(botData.Variables["response.headers"]);
-
-                Console.ForegroundColor = ConsoleColor.DarkYellow;
-                Console.WriteLine("Received cookies:");
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine(string.Join(Environment.NewLine, cookieContainer.GetAllCookies().Select(c => $"{c.Name}: {c.Value}")).Trim());
-
-                Console.ForegroundColor = ConsoleColor.DarkGreen;
-                Console.WriteLine(_request.LoadContent ? botData.Variables["response.content"] : "[SKIPPED]");
-
-                Console.Write(Environment.NewLine);
             }
-            catch
+            else
             {
-                botData.HttpClient.IsValid = false;
-                botData.Status = BotStatus.Retry;
+                botData.Variables["response.address"] = responseMessage.RequestMessage.RequestUri.AbsoluteUri;
+                botData.Variables["response.statusCode"] = ((int)responseMessage.StatusCode).ToString();
+                responseMessage.Headers.Remove("Set-Cookie");
+                botData.Variables["response.headers"] = responseMessage.Headers.ToString();
+                botData.Variables["response.content"] = _request.LoadContent ? WebUtility.HtmlDecode(await responseMessage.Content.ReadAsStringAsync()) : string.Empty;
             }
+
+            Console.Write(Environment.NewLine);
+
+            Console.WriteLine($"Address: {botData.Variables["response.address"]}");
+            Console.WriteLine($"Response code: {botData.Variables["response.statusCode"]}");
+
+            Console.ForegroundColor = ConsoleColor.DarkMagenta;
+            Console.WriteLine("Received headers:");
+            Console.ForegroundColor = ConsoleColor.Magenta;
+            Console.Write(botData.Variables["response.headers"]);
+
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            Console.WriteLine("Received cookies:");
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine(string.Join(Environment.NewLine, cookieContainer.GetAllCookies().Select(c => $"{c.Name}: {c.Value}")).Trim());
+
+            Console.ForegroundColor = ConsoleColor.DarkGreen;
+            Console.WriteLine(_request.LoadContent ? botData.Variables["response.content"] : "[SKIPPED]");
+
+            Console.Write(Environment.NewLine);
         }
     }
 }

@@ -16,15 +16,17 @@ namespace Kraken
         private readonly IEnumerable<string> _proxiesFile;
         private readonly int _skip;
         private readonly int _bots;
+        private readonly bool _verbose;
         private readonly Dictionary<string, Func<string, Block>> _buildBlockFunctions;
 
-        public CheckerBuilder(string configFile, string wordlistFile, IEnumerable<string> proxiesFile, int skip, int bots)
+        public CheckerBuilder(string configFile, string wordlistFile, IEnumerable<string> proxiesFile, int skip, int bots, bool verbose)
         {
             _configFile = configFile;
             _wordlistFile = wordlistFile;
             _proxiesFile = proxiesFile;
             _skip = skip;
             _bots = bots;
+            _verbose = verbose;
             _buildBlockFunctions = new Dictionary<string, Func<string, Block>>(StringComparer.OrdinalIgnoreCase)
             {
                 { "request", BuildBlockRequest },
@@ -60,6 +62,11 @@ namespace Kraken
 
             var httpClientManager = _proxiesFile.Any() ? new HttpClientManager(File.ReadAllLines(_proxiesFile.First()).Where(p => !string.IsNullOrEmpty(p)), _proxiesFile.Count() == 2 ? Enum.Parse<ProxyType>(_proxiesFile.ElementAt(1), true) : ProxyType.Http) : new HttpClientManager();
 
+            var parallelOptions = new ParallelOptions()
+            {
+                MaxDegreeOfParallelism = _bots
+            };
+
             var krakenSettings = JsonConvert.DeserializeObject<KrakenSettings>(File.ReadAllText("settings.json"));
 
             var record = GetRecord(configSettings.Name);
@@ -68,7 +75,7 @@ namespace Kraken
 
             Console.OutputEncoding = Encoding.UTF8;
 
-            return new Checker(configSettings, blocks, botInputs, httpClientManager, _skip, _bots, krakenSettings, record);
+            return new Checker(configSettings, blocks, botInputs, httpClientManager, _skip, parallelOptions, _verbose, krakenSettings, record);
         }
 
         private IEnumerable<Block> BuildBlocks(JToken token)

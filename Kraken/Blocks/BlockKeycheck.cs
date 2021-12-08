@@ -31,7 +31,7 @@ namespace Kraken.Blocks
             {
                 var results = keychain.Keys.Select(k => _keyConditionFunctions[k.Condition].Invoke(ReplaceValues(k.Value, botData), ReplaceValues(k.Source, botData)));
 
-                if (keychain.Condition.Equals("or", StringComparison.OrdinalIgnoreCase) ? results.Any(r => r) : results.All(r => r))
+                if (keychain.Condition.Equals("and", StringComparison.OrdinalIgnoreCase) ? results.All(r => r) : results.Any(r => r))
                 {
                     botData.Status = Enum.Parse<BotStatus>(keychain.Status, true);
                     success = true;
@@ -43,7 +43,7 @@ namespace Kraken.Blocks
                 return Task.CompletedTask;
             }
 
-            botData.Status = _keycheck.OtherwiseBan ? BotStatus.Ban : BotStatus.ToCheck;
+            botData.Status = _keycheck.BanOnToCheck ? BotStatus.Ban : BotStatus.ToCheck;
 
             return Task.CompletedTask;
         }
@@ -69,7 +69,7 @@ namespace Kraken.Blocks
                     results.Add((result, value, key.Condition, source));
                 }
 
-                if (keychain.Condition.Equals("or", StringComparison.OrdinalIgnoreCase) ? results.Any(r => r.Item1) : results.All(r => r.Item1))
+                if (keychain.Condition.Equals("and", StringComparison.OrdinalIgnoreCase) ? results.All(r => r.Item1) : results.Any(r => r.Item1))
                 {
                     botData.Status = Enum.Parse<BotStatus>(keychain.Status, true);
                     success = true;
@@ -90,7 +90,7 @@ namespace Kraken.Blocks
                 return Task.CompletedTask;
             }
 
-            botData.Status = _keycheck.OtherwiseBan ? BotStatus.Ban : BotStatus.ToCheck;
+            botData.Status = _keycheck.BanOnToCheck ? BotStatus.Ban : BotStatus.ToCheck;
 
             return Task.CompletedTask;
         }

@@ -39,7 +39,10 @@ namespace Kraken.Blocks
 
             if (_extractor.Capture)
             {
-                botData.Captures[_extractor.Name] = result;
+                if (!string.IsNullOrEmpty(result))
+                {
+                    botData.Captures[_extractor.Name] = result;
+                }
             }
 
             return Task.CompletedTask;

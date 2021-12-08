@@ -8,6 +8,7 @@
         Failure,
         Retry,
         Ban,
+        Error,
         ToCheck
     }
 }
