@@ -33,6 +33,20 @@ open a cmd then write "cd {path where kraken.exe is located}" and "kraken.exe --
 
 ### Example
 
+##### Variables
+
+* input
+* input.user
+* input.pass
+
+* response.statusCode
+* response.address
+* response.headers
+* response.headers[Location]
+* response.cookies
+* response.cookies[CAKEPHP]
+* response.content
+
 ##### Request
 
 ```yaml
