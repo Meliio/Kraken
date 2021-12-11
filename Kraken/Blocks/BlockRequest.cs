@@ -69,7 +69,7 @@ namespace Kraken.Blocks
                         botData.Variables["response.statusCode"] = ((int)redirecResponseMessage.StatusCode).ToString();
                         redirecResponseMessage.Headers.Remove("Set-Cookie");
                         botData.Headers = redirecResponseMessage.Headers.ToArray();
-                        botData.Variables["response.content"] = _request.LoadContent ? WebUtility.HtmlDecode(await responseMessage.Content.ReadAsStringAsync()) : string.Empty;
+                        botData.Variables["response.content"] = _request.LoadContent ? WebUtility.HtmlDecode(await redirecResponseMessage.Content.ReadAsStringAsync()) : string.Empty;
                         break;
                     }
                 }
