@@ -21,7 +21,7 @@ namespace Kraken.Blocks
 
             foreach (var header in _request.Headers)
             {
-                requestMessage.Headers.TryAddWithoutValidation(header.Key, header.Value);  
+                requestMessage.Headers.TryAddWithoutValidation(ReplaceValues(header.Key, botData), ReplaceValues(header.Value, botData));  
             }
 
             if (!string.IsNullOrEmpty(botData.CookieContainer.GetCookieHeader(requestMessage.RequestUri)))
@@ -68,7 +68,7 @@ namespace Kraken.Blocks
                         botData.Variables["response.address"] = redirecResponseMessage.RequestMessage.RequestUri.AbsoluteUri;
                         botData.Variables["response.statusCode"] = ((int)redirecResponseMessage.StatusCode).ToString();
                         redirecResponseMessage.Headers.Remove("Set-Cookie");
-                        botData.Variables["response.headers"] = redirecResponseMessage.Headers.ToString();
+                        botData.Headers = redirecResponseMessage.Headers.ToArray();
                         botData.Variables["response.content"] = _request.LoadContent ? WebUtility.HtmlDecode(await responseMessage.Content.ReadAsStringAsync()) : string.Empty;
                         break;
                     }
@@ -79,7 +79,7 @@ namespace Kraken.Blocks
                 botData.Variables["response.address"] = responseMessage.RequestMessage.RequestUri.AbsoluteUri;
                 botData.Variables["response.statusCode"] = ((int)responseMessage.StatusCode).ToString();
                 responseMessage.Headers.Remove("Set-Cookie");
-                botData.Variables["response.headers"] = responseMessage.Headers.ToString();
+                botData.Headers = responseMessage.Headers.ToArray();
                 botData.Variables["response.content"] = _request.LoadContent ? WebUtility.HtmlDecode(await responseMessage.Content.ReadAsStringAsync()) : string.Empty;
             }
         }
@@ -157,7 +157,7 @@ namespace Kraken.Blocks
                         botData.Variables["response.address"] = redirecResponseMessage.RequestMessage.RequestUri.AbsoluteUri;
                         botData.Variables["response.statusCode"] = ((int)redirecResponseMessage.StatusCode).ToString();
                         redirecResponseMessage.Headers.Remove("Set-Cookie");
-                        botData.Variables["response.headers"] = redirecResponseMessage.Headers.ToString();
+                        botData.Headers = redirecResponseMessage.Headers.ToArray();
                         botData.Variables["response.content"] = _request.LoadContent ? WebUtility.HtmlDecode(await redirecResponseMessage.Content.ReadAsStringAsync()) : string.Empty;
                         break;
                     }
@@ -166,9 +166,9 @@ namespace Kraken.Blocks
             else
             {
                 botData.Variables["response.address"] = responseMessage.RequestMessage.RequestUri.AbsoluteUri;
-                botData.Variables["response.statusCode"] = ((int)responseMessage.StatusCode).ToString();
+                botData.Variables["response.statusCode"] = ((int)responseMessage.StatusCode).ToString();           
                 responseMessage.Headers.Remove("Set-Cookie");
-                botData.Variables["response.headers"] = responseMessage.Headers.ToString();
+                botData.Headers = responseMessage.Headers.ToArray();
                 botData.Variables["response.content"] = _request.LoadContent ? WebUtility.HtmlDecode(await responseMessage.Content.ReadAsStringAsync()) : string.Empty;
             }
 
@@ -180,7 +180,7 @@ namespace Kraken.Blocks
             Console.ForegroundColor = ConsoleColor.DarkMagenta;
             Console.WriteLine("Received headers:");
             Console.ForegroundColor = ConsoleColor.Magenta;
-            Console.Write(botData.Variables["response.headers"]);
+            Console.WriteLine(ReplaceValues("<response.Headers>", botData));
 
             Console.ForegroundColor = ConsoleColor.DarkYellow;
             Console.WriteLine("Received cookies:");

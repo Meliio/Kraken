@@ -161,6 +161,7 @@ namespace Kraken
             if (_httpClientManager.ProxiesLenght > 0)
             {
                 httpClient.IsValid = false;
+
                 lock (Stats)
                 {
                     Stats.DecrementProxiesAlive();

@@ -35,14 +35,16 @@ namespace Kraken.Blocks
         {
             var result = _extractorFunctions[_extractor.Type].Invoke(ReplaceValues(_extractor.Source, botData));
 
-            botData.Variables[_extractor.Name] = result;
-
             if (_extractor.Capture)
             {
                 if (!string.IsNullOrEmpty(result))
                 {
                     botData.Captures[_extractor.Name] = result;
                 }
+            }
+            else
+            {
+                botData.Variables[_extractor.Name] = result;
             }
 
             return Task.CompletedTask;
@@ -55,16 +57,23 @@ namespace Kraken.Blocks
 
             var result = _extractorFunctions[_extractor.Type].Invoke(ReplaceValues(_extractor.Source, botData));
 
-            botData.Variables[_extractor.Name] = result;
-
             if (_extractor.Capture)
             {
-                botData.Captures[_extractor.Name] = result;
+                if (!string.IsNullOrEmpty(result))
+                {
+                    botData.Captures[_extractor.Name] = result;
+
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"Extracted variable | Name: {_extractor.Name} | Value: {result} | Capture: {_extractor.Capture}");
+                }
             }
+            else
+            {
+                botData.Variables[_extractor.Name] = result;
 
-            Console.ForegroundColor = _extractor.Capture ? ConsoleColor.Red : ConsoleColor.Yellow;
-
-            Console.WriteLine($"Extracted variable | Name: {_extractor.Name} | Value: {result} | Capture: {_extractor.Capture}");
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"Extracted variable | Name: {_extractor.Name} | Value: {result} | Capture: {_extractor.Capture}");
+            }
 
             Console.Write(Environment.NewLine);
 
