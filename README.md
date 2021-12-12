@@ -42,9 +42,9 @@ open a cmd then write "cd {path where kraken.exe is located}" and "kraken.exe --
 * response.statusCode
 * response.address
 * response.headers
-* response.headers[headerName]
+* response.header[headerName]
 * response.cookies
-* response.cookies[cookieName]
+* response.cookie[cookieName]
 * response.content
 
 ##### Request
