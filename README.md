@@ -156,7 +156,7 @@ blocks:
          Pragma: no-cache
          Accept: */*
   - extractor:
-      type: ls
+      type: lr
       name: token
       left: 'name=login_token value="'
       right: '"'
