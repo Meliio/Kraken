@@ -2,6 +2,8 @@
 
 Kraken is a tool for brute force or credential stuffing attacks high performance
 
+![screen-gif](./gif.gif)
+
 ## Features
 * multithreading
 * proxy http, sock4 and sock5 support
