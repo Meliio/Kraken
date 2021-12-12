@@ -67,7 +67,7 @@ blocks:
 ```yaml
 blocks:
   - extractor:
-      type: ls
+      type: lr
       name: token
       left: ''
       right: ''
