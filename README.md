@@ -42,9 +42,9 @@ open a cmd then write "cd {path where kraken.exe is located}" and "kraken.exe --
 * response.statusCode
 * response.address
 * response.headers
-* response.headers[Location]
+* response.headers[headerName]
 * response.cookies
-* response.cookies[CAKEPHP]
+* response.cookies[cookieName]
 * response.content
 
 ##### Request
@@ -67,7 +67,7 @@ blocks:
 ```yaml
 blocks:
   - extractor:
-      type: ls
+      type: lr
       name: token
       left: ''
       right: ''
