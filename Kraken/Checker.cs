@@ -2,6 +2,7 @@
 using Kraken.Enums;
 using Kraken.Models;
 using LiteDB;
+using Spectre.Console;
 using System.Text;
 
 namespace Kraken
@@ -42,118 +43,155 @@ namespace Kraken
 
         public async Task StartAsync()
         {
+            _ = StartUpdatingConsoleCheckerStatsAsync();
+
             _ = StartCpmCalculator();
 
             _ = StartUpdatingRecordAsync();
 
-            await Parallel.ForEachAsync(_botInputs.Skip(_skip == 0 ? _record.Progress : _skip), _parallelOptions, async (input, _) =>
+            await AnsiConsole.Status().AutoRefresh(true).Spinner(Spinner.Known.Default).StartAsync("Progress", async ctx =>
             {
-                BotData botData = null;
-
-                for (var attempts = 0; attempts < 5; attempts++)
+                await Parallel.ForEachAsync(_botInputs.Skip(_skip == 0 ? _record.Progress : _skip), _parallelOptions, async (input, _) =>
                 {
-                    var httpClient = _httpClientManager.GetRandomHttpClient();
+                    BotData botData = null;
 
-                    botData = new BotData(input, httpClient);
-
-                    foreach (var block in _blocks)
+                    for (var attempts = 0; attempts < 5; attempts++)
                     {
-                        try
+                        var httpClient = _httpClientManager.GetRandomHttpClient();
+
+                        botData = new BotData(input, httpClient);
+
+                        foreach (var block in _blocks)
                         {
-                            await block.Run(botData);
-                        }
-                        catch (HttpRequestException)
-                        {
-                            DisableHttpClient(httpClient);
-                            botData.Status = BotStatus.Retry;
-                        }
-                        catch (Exception error)
-                        {
-                            if (error.Message.Contains("HttpClient.Timeout"))
+                            try
+                            {
+                                await block.Run(botData);
+                            }
+                            catch (HttpRequestException)
                             {
                                 DisableHttpClient(httpClient);
                                 botData.Status = BotStatus.Retry;
                             }
-                            else
+                            catch (Exception error)
                             {
-                                if (_verbose)
+                                if (error.Message.Contains("HttpClient.Timeout"))
                                 {
-                                    Console.ForegroundColor = ConsoleColor.Red;
-                                    Console.WriteLine(error.Message);
+                                    DisableHttpClient(httpClient);
+                                    botData.Status = BotStatus.Retry;
                                 }
-                                botData.Status = BotStatus.Error;
+                                else
+                                {
+                                    if (_verbose)
+                                    {
+                                        AnsiConsole.WriteException(error);
+                                    }
+                                    botData.Status = BotStatus.Error;
+                                }
+                            }
+
+                            if (botData.Status is not BotStatus.None and not BotStatus.Success)
+                            {
+                                break;
                             }
                         }
 
-                        if (botData.Status is not BotStatus.None and not BotStatus.Success)
+                        if (botData.Status == BotStatus.Retry)
+                        {
+                            Stats.IncrementRetry();
+                        }
+                        else if (botData.Status == BotStatus.Ban)
+                        {
+                            DisableHttpClient(httpClient);
+                            Stats.IncrementBan();
+                        }
+                        else if (botData.Status == BotStatus.Error)
+                        {
+                            Stats.IncrementError();
+                        }
+                        else
                         {
                             break;
                         }
                     }
 
-                    if (botData.Status == BotStatus.Retry)
+                    if (botData.Status == BotStatus.Failure)
                     {
-                        Stats.IncrementRetry();
-                    }
-                    else if (botData.Status == BotStatus.Ban)
-                    {
-                        DisableHttpClient(httpClient);
-                        Stats.IncrementBan();
-                    }
-                    else if (botData.Status == BotStatus.Error)
-                    {
-                        Stats.IncrementError();
+                        Stats.IncrementFailure();
                     }
                     else
                     {
-                        break;
-                    }
-                }
-
-                if (botData.Status == BotStatus.Failure)
-                {
-                    Stats.IncrementFailure();
-                }
-                else
-                {
-                    if (_validStatuses.Contains(botData.Status))
-                    {
-                        var outputPath = Path.Combine(_krakenSettings.OutputDirectory, _configSettings.Name, $"{botData.Status.ToString().ToLower()}.txt");
-                        var output = OutputBuilder(botData);
-
-                        await AppendOutputToFileAsync(outputPath, output);
-
-                        switch (botData.Status)
+                        if (_validStatuses.Contains(botData.Status))
                         {
-                            case BotStatus.None:
-                                Console.ForegroundColor = ConsoleColor.White;
-                                Console.WriteLine($"[NONE] {output}");
-                                Stats.IncrementSuccess();
-                                break;
-                            case BotStatus.Success:
-                                Console.ForegroundColor = ConsoleColor.Green;
-                                Console.WriteLine($"[SUCCESS] {output}");
-                                Stats.IncrementSuccess();
-                                break;
-                            case BotStatus.Free:
-                                Console.ForegroundColor = ConsoleColor.Yellow;
-                                Console.WriteLine($"[FREE] {output}");
-                                Stats.IncrementFree();
-                                break;
+                            var outputPath = Path.Combine(_krakenSettings.OutputDirectory, _configSettings.Name, $"{botData.Status.ToString().ToLower()}.txt");
+                            var output = OutputBuilder(botData);
+
+                            await AppendOutputToFileAsync(outputPath, output);
+
+                            switch (botData.Status)
+                            {
+                                case BotStatus.None:
+                                    AnsiConsole.MarkupLine($"[white]NONE:[/] {output}");
+                                    Stats.IncrementSuccess();
+                                    break;
+                                case BotStatus.Success:
+                                    AnsiConsole.MarkupLine($"[green]SUCCESS:[/] {output}");
+                                    Stats.IncrementSuccess();
+                                    break;
+                                case BotStatus.Free:
+                                    AnsiConsole.MarkupLine($"[orange]FREE:[/] {output}");
+                                    Stats.IncrementFree();
+                                    break;
+                            }
+                        }
+                        else
+                        {
+                            AnsiConsole.MarkupLine($"[cyan]TOCHECK:[/] {input}");
+                            Stats.IncrementToCheck();
                         }
                     }
-                    else
-                    {
-                        Console.ForegroundColor = ConsoleColor.DarkCyan;
-                        Console.WriteLine($"[TOCHECK] {input}");
-                        Stats.IncrementToCheck();
-                    }
-                }
 
-                _outputs.Add(new CheckerOutput());
+                    _outputs.Add(new CheckerOutput());
 
-                Stats.IncrementChecked();
+                    Stats.IncrementChecked();
+                });
             });
+        }
+
+        private async Task StartUpdatingConsoleCheckerStatsAsync()
+        {
+            var periodicTimer = new PeriodicTimer(TimeSpan.FromSeconds(10));
+
+            var checkerStats = new StringBuilder();
+
+            while (true)
+            {
+                checkerStats
+                    .Append(Stats.Progress * 100 / Stats.WordlistLenght)
+                    .Append("% Success: ")
+                    .Append(Stats.Success)
+                    .Append(" Free: ")
+                    .Append(Stats.Free)
+                    .Append(" Failure: ")
+                    .Append(Stats.Failure)
+                    .Append(" ToCheck: ")
+                    .Append(Stats.ToCheck)
+                    .Append(" Retry: ")
+                    .Append(Stats.Retry)
+                    .Append(" Ban: ")
+                    .Append(Stats.Ban)
+                    .Append(" Error: ")
+                    .Append(Stats.Error)
+                    .Append(" Proxies: ")
+                    .Append(Stats.ProxiesAlive)
+                    .Append(" | CPM ")
+                    .Append(Stats.Cpm);
+
+                AnsiConsole.MarkupLine($"[grey]LOG:[/] {checkerStats}");
+
+                checkerStats.Clear();
+
+                await periodicTimer.WaitForNextTickAsync();
+            }
         }
 
         private void DisableHttpClient(CustomHttpClient httpClient)
@@ -169,7 +207,7 @@ namespace Kraken
             }
         }
 
-        private string OutputBuilder(BotData botData) => botData.Captures.Any() ? new StringBuilder().Append(botData.Input.ToString()).Append(_krakenSettings.OutputSeparator).AppendJoin(_krakenSettings.OutputSeparator, botData.Captures.Select(c => $"{c.Key} = {c.Value}")).ToString() : botData.Input.ToString();
+        private string OutputBuilder(BotData botData) => botData.Captures.Any() ? new StringBuilder().Append(botData.Input.ToString()).Append(_krakenSettings.OutputSeparator).AppendJoin(_krakenSettings.OutputSeparator, botData.Captures.Select(c => $"[red]{c.Key}[/] = {c.Value}")).ToString() : botData.Input.ToString();
 
         private async Task AppendOutputToFileAsync(string path, string content)
         {
@@ -187,6 +225,8 @@ namespace Kraken
 
         private async Task StartUpdatingRecordAsync()
         {
+            var periodicTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(100));
+
             using var database = new LiteDatabase("Kraken.db");
 
             var collection = database.GetCollection<Record>("records");
@@ -197,12 +237,14 @@ namespace Kraken
 
                 collection.Update(_record);
 
-                await Task.Delay(100);
+                await periodicTimer.WaitForNextTickAsync();
             }
         }
 
         private async Task StartCpmCalculator()
         {
+            var periodicTimer = new PeriodicTimer(TimeSpan.FromMilliseconds(100));
+
             while (true)
             {
                 var cpm = 0;
@@ -219,7 +261,7 @@ namespace Kraken
 
                 Stats.Cpm = cpm;
 
-                await Task.Delay(100);
+                await periodicTimer.WaitForNextTickAsync();
             }
         }
     }

@@ -75,10 +75,6 @@ namespace Kraken
         {
             var checker = new CheckerBuilder(options.ConfigFile, options.WordlistFile, options.Proxies, options.Skip, options.Bots, options.Verbose).Build();
 
-            var consoleManager = new ConsoleManager(checker);
-
-            _ = consoleManager.StartUpdatingConsoleCheckerStatsAsync();
-
             await checker.StartAsync();
         }
 
