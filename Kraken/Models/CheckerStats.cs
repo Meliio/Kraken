@@ -12,10 +12,8 @@
         public int Ban => _ban;
         public int Error => _error;
         public int Checked => _checked;
-        public int ProxiesAlive => _proxiesAlive;
         public int Cpm { get; set; }
 
-        private readonly int _proxyesLenght;
         private readonly int _checkPoint;
 
         private int _toCheck;
@@ -26,13 +24,10 @@
         private int _ban;
         private int _error;
         private int _checked;
-        private int _proxiesAlive;
 
-        public CheckerStats(int wordlistLenght, int proxiesLenght, int checkPoint)
+        public CheckerStats(int wordlistLenght, int checkPoint)
         {
             WordlistLenght = wordlistLenght;
-            _proxyesLenght = proxiesLenght;
-            _proxiesAlive = proxiesLenght;
             _checkPoint = checkPoint;
         }
 
@@ -44,16 +39,5 @@
         public void IncrementBan() => Interlocked.Increment(ref _ban);
         public void IncrementError() => Interlocked.Increment(ref _error);
         public void IncrementChecked() => Interlocked.Increment(ref _checked);
-        public void DecrementProxiesAlive()
-        {
-            if (_proxiesAlive == 1)
-            {
-                _proxiesAlive = _proxyesLenght;
-            }
-            else
-            {
-                Interlocked.Decrement(ref _proxiesAlive);
-            }
-        }
     }
 }

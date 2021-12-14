@@ -3,7 +3,6 @@ using Kraken.Models;
 using Kraken.Models.Blocks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Text;
 using YamlDotNet.Serialization;
 using Yove.Proxy;
 
@@ -56,7 +55,6 @@ namespace Kraken
 
             var httpClientManager = _proxy.Any() ? new HttpClientManager(new string[] { _proxy.First() }, _proxy.Count() == 2 ? Enum.Parse<ProxyType>(_proxy.ElementAt(1), true) : ProxyType.Http) : new HttpClientManager();
 
-            Console.OutputEncoding = Encoding.UTF8;
 
             return new Debugger(blocks, botInputs, httpClientManager);
         }

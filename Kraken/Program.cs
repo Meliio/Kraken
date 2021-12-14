@@ -2,6 +2,7 @@
 using Kraken.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using System.Text;
 
 namespace Kraken
 {
@@ -17,7 +18,7 @@ namespace Kraken
         [Option('p', "proxies")]
         public IEnumerable<string> Proxies { get; set; } = Array.Empty<string>();
 
-        [Option('s', "skip")]
+        [Option('s', "skip", Default = 0)]
         public int Skip { get; set; }
 
         [Option('b', "bots", Default = 1)]
@@ -48,6 +49,8 @@ namespace Kraken
         {
             await GenerateSettingsFile();
 
+            Console.OutputEncoding = Encoding.UTF8;
+
             await Parser.Default.ParseArguments<RunOptions, DebugOptions>(args).MapResult(
                 (RunOptions options) => Run(options),
                 (DebugOptions options) => Debug(options),
@@ -71,16 +74,16 @@ namespace Kraken
             }));
         }
 
-        private static async Task Run(RunOptions options)
+        private static async Task Run(RunOptions runOptions)
         {
-            var checker = new CheckerBuilder(options.ConfigFile, options.WordlistFile, options.Proxies, options.Skip, options.Bots, options.Verbose).Build();
+            var checker = new CheckerBuilder(runOptions.ConfigFile, runOptions.WordlistFile, runOptions.Proxies, runOptions.Skip, runOptions.Bots, runOptions.Verbose).Build();
 
             await checker.StartAsync();
         }
 
-        private static async Task Debug(DebugOptions options)
+        private static async Task Debug(DebugOptions debugOptions)
         {
-            var debugger = new DebuggerBuilder(options.ConfigFile, options.BotInput, options.Proxy).Build();
+            var debugger = new DebuggerBuilder(debugOptions.ConfigFile, debugOptions.BotInput, debugOptions.Proxy).Build();
 
             await debugger.StartAsync();
         }

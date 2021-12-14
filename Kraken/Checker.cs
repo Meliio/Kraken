@@ -26,7 +26,7 @@ namespace Kraken
 
         public Checker(ConfigSettings configSettings, IEnumerable<Block> blocks, IEnumerable<BotInput> botInputs, HttpClientManager httpClientManager, int skip, ParallelOptions parallelOptions, bool verbose, KrakenSettings krakenSettings, Record record)
         {
-            Stats = new CheckerStats(botInputs.Count(), httpClientManager.ProxiesLenght, record.Progress);
+            Stats = new CheckerStats(botInputs.Count(), record.Progress);
             _configSettings = configSettings;
             _blocks = blocks;
             _botInputs = botInputs;
@@ -49,7 +49,7 @@ namespace Kraken
 
             _ = StartUpdatingRecordAsync();
 
-            await AnsiConsole.Status().AutoRefresh(true).Spinner(Spinner.Known.Default).StartAsync("Progress", async ctx =>
+            await AnsiConsole.Status().StartAsync("Progress", async ctx =>
             {
                 await Parallel.ForEachAsync(_botInputs.Skip(_skip == 0 ? _record.Progress : _skip), _parallelOptions, async (input, _) =>
                 {
@@ -69,14 +69,14 @@ namespace Kraken
                             }
                             catch (HttpRequestException)
                             {
-                                DisableHttpClient(httpClient);
+                                httpClient.IsValid = false;
                                 botData.Status = BotStatus.Retry;
                             }
                             catch (Exception error)
                             {
                                 if (error.Message.Contains("HttpClient.Timeout"))
                                 {
-                                    DisableHttpClient(httpClient);
+                                    httpClient.IsValid = false;
                                     botData.Status = BotStatus.Retry;
                                 }
                                 else
@@ -101,7 +101,7 @@ namespace Kraken
                         }
                         else if (botData.Status == BotStatus.Ban)
                         {
-                            DisableHttpClient(httpClient);
+                            httpClient.IsValid = false;
                             Stats.IncrementBan();
                         }
                         else if (botData.Status == BotStatus.Error)
@@ -130,22 +130,22 @@ namespace Kraken
                             switch (botData.Status)
                             {
                                 case BotStatus.None:
-                                    AnsiConsole.MarkupLine($"[white]NONE:[/] {output}");
+                                    AnsiConsole.MarkupLine($"NONE: {output}");
                                     Stats.IncrementSuccess();
                                     break;
                                 case BotStatus.Success:
-                                    AnsiConsole.MarkupLine($"[green]SUCCESS:[/] {output}");
+                                    AnsiConsole.MarkupLine($"[green4]SUCCESS:[/] {output}");
                                     Stats.IncrementSuccess();
                                     break;
                                 case BotStatus.Free:
-                                    AnsiConsole.MarkupLine($"[orange]FREE:[/] {output}");
+                                    AnsiConsole.MarkupLine($"[orange3]FREE:[/] {output}");
                                     Stats.IncrementFree();
                                     break;
                             }
                         }
                         else
                         {
-                            AnsiConsole.MarkupLine($"[cyan]TOCHECK:[/] {input}");
+                            AnsiConsole.MarkupLine($"[cyan3]TOCHECK:[/] {input}");
                             Stats.IncrementToCheck();
                         }
                     }
@@ -181,8 +181,6 @@ namespace Kraken
                     .Append(Stats.Ban)
                     .Append(" Error: ")
                     .Append(Stats.Error)
-                    .Append(" Proxies: ")
-                    .Append(Stats.ProxiesAlive)
                     .Append(" | CPM ")
                     .Append(Stats.Cpm);
 
@@ -194,20 +192,7 @@ namespace Kraken
             }
         }
 
-        private void DisableHttpClient(CustomHttpClient httpClient)
-        {
-            if (_httpClientManager.ProxiesLenght > 0)
-            {
-                httpClient.IsValid = false;
-
-                lock (Stats)
-                {
-                    Stats.DecrementProxiesAlive();
-                }
-            }
-        }
-
-        private string OutputBuilder(BotData botData) => botData.Captures.Any() ? new StringBuilder().Append(botData.Input.ToString()).Append(_krakenSettings.OutputSeparator).AppendJoin(_krakenSettings.OutputSeparator, botData.Captures.Select(c => $"[red]{c.Key}[/] = {c.Value}")).ToString() : botData.Input.ToString();
+        private string OutputBuilder(BotData botData) => botData.Captures.Any() ? new StringBuilder().Append(botData.Input.ToString()).Append(_krakenSettings.OutputSeparator).AppendJoin(_krakenSettings.OutputSeparator, botData.Captures.Select(c => $"{c.Key} = [silver]{c.Value}[/]")).ToString() : botData.Input.ToString();
 
         private async Task AppendOutputToFileAsync(string path, string content)
         {
