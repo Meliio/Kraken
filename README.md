@@ -13,7 +13,7 @@ Kraken is a tool for brute force or credential stuffing attacks high performance
 ## Getting Started
 
 download [release](https://github.com/Meliio/Kraken/releases)
-open a cmd then write "cd {path where kraken.exe is located}" and "kraken.exe --help"
+open a cmd then write "cd {path where kraken.exe is located}" then "kraken.exe --help"
 
 ### Prerequisite
 
