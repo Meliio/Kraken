@@ -109,15 +109,24 @@ namespace Kraken
 
                 var headers = new Dictionary<string, string>();
 
+                var cookieHeader = string.Empty;
+
                 var content = string.Empty;
 
                 foreach (var line in lines.Skip(1))
                 {
-                    if (line.Contains(": "))
-                    {
-                        var headerSplit = line.Split(": ");
+                    var headerSplit = line.Split(": ");
 
-                        headers.Add(headerSplit[0], headerSplit[1]);
+                    if (headerSplit.Length == 2)
+                    {
+                        if (headerSplit[0].Equals("Cookie", StringComparison.OrdinalIgnoreCase))
+                        {
+                            cookieHeader = headerSplit[1].Replace(';', ',');
+                        }
+                        else
+                        {
+                            headers.Add(headerSplit[0], headerSplit[1]);
+                        }
                     }
                     else
                     {
@@ -132,7 +141,7 @@ namespace Kraken
                     headers.Add("Content-Type", "application/x-www-form-urlencoded");
                 }
 
-                var request = new Request(httpMethod, url, headers, content, !requestBlock.TryGetValue("redirect", out var redirect) || (bool)redirect, !requestBlock.TryGetValue("loadContent", out var loadContent) || (bool)loadContent);
+                var request = new Request(httpMethod, url, headers, cookieHeader, content, !requestBlock.TryGetValue("redirect", out var redirect) || (bool)redirect, !requestBlock.TryGetValue("loadContent", out var loadContent) || (bool)loadContent);
 
                 return new BlockRequest(request);
             }

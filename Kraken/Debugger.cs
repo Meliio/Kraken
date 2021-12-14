@@ -1,7 +1,9 @@
 ﻿using Kraken.Blocks;
 using Kraken.Enums;
 using Kraken.Models;
+using Spectre.Console;
 using System.Diagnostics;
+using System.Text;
 
 namespace Kraken
 {
@@ -20,14 +22,11 @@ namespace Kraken
 
         public async Task StartAsync()
         {
-            if (!string.IsNullOrEmpty(_botInput.ToString()))
-            {
-                Console.WriteLine($"INPUT = {_botInput}");
-            }
-
             var httpClient = _httpClientManager.GetRandomHttpClient();
 
             var botData = new BotData(_botInput, httpClient);
+
+            var stringBuilder = new StringBuilder();
 
             var stopwatch = new Stopwatch();
 
@@ -35,7 +34,7 @@ namespace Kraken
 
             foreach (var block in _blocks)
             {
-                await block.Debug(botData);
+                await block.Debug(botData, stringBuilder);
 
                 if (botData.Status is not BotStatus.None and not BotStatus.Success)
                 {
@@ -45,8 +44,9 @@ namespace Kraken
 
             stopwatch.Stop();
 
-            Console.ForegroundColor = ConsoleColor.White;
-            Console.WriteLine($"===== DEBUGGER ENDED AFTER {stopwatch.Elapsed.TotalSeconds} SECOND(S) WITH STATUS: {botData.Status.ToString().ToUpper()} =====");
+            stringBuilder.AppendLine($"===== DEBUGGER ENDED AFTER {stopwatch.Elapsed.TotalSeconds} SECOND(S) WITH STATUS: {botData.Status.ToString().ToUpper()} =====");
+
+            AnsiConsole.MarkupLine(stringBuilder.ToString());
         }
     }
 }

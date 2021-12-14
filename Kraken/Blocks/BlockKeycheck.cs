@@ -1,6 +1,7 @@
 ﻿using Kraken.Enums;
 using Kraken.Models;
 using Kraken.Models.Blocks;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Kraken.Blocks
@@ -48,10 +49,9 @@ namespace Kraken.Blocks
             return Task.CompletedTask;
         }
 
-        public override Task Debug(BotData botData)
+        public override Task Debug(BotData botData, StringBuilder stringBuilder)
         {
-            Console.ForegroundColor = ConsoleColor.DarkYellow;
-            Console.WriteLine("[--- Executing Block KEY CHECK ---]");
+            stringBuilder.AppendLine("[orange3]<--- Executing KEY CHECK --->[/]");
 
             var success = false;
 
@@ -74,14 +74,10 @@ namespace Kraken.Blocks
                     botData.Status = Enum.Parse<BotStatus>(keychain.Status, true);
                     success = true;
 
-                    Console.ForegroundColor = ConsoleColor.White;
-
                     foreach (var result in results.Where(r => r.Item1))
                     {
-                        Console.WriteLine($"Found '{keychain.Condition.ToUpper()}' Key {(result.Item4.Length < 30 ? result.Item4.Replace("\n", string.Empty) : $"{result.Item4[..30].Replace("\n", string.Empty)} [...]")} {result.Item3} {result.Item2}");
+                        stringBuilder.AppendLine($"Found '{keychain.Condition.ToUpper()}' Key {(result.Item4.Length < 30 ? result.Item4.Replace("\n", string.Empty) : $"{result.Item4[..30].Replace("\n", string.Empty)}(...)")} {result.Item3} {result.Item2}");
                     }
-
-                    Console.Write(Environment.NewLine);
                 }
             }
 

@@ -6,8 +6,6 @@ namespace Kraken
 {
     public class HttpClientManager
     {
-        public int ProxiesLenght { get; }
-
         private readonly CustomHttpClient[] _httpClients;
         private readonly Random _random;
 
@@ -35,7 +33,6 @@ namespace Kraken
                 Timeout = TimeSpan.FromSeconds(10)
             });
 
-            ProxiesLenght = proxyClients.Count();
             _httpClients = httpClients.ToArray();
             _random = new Random();
         }

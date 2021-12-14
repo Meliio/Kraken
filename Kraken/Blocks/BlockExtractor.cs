@@ -3,6 +3,7 @@ using AngleSharp.Html.Parser;
 using Kraken.Models;
 using Kraken.Models.Blocks;
 using Newtonsoft.Json.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Kraken.Blocks
@@ -50,10 +51,9 @@ namespace Kraken.Blocks
             return Task.CompletedTask;
         }
 
-        public override Task Debug(BotData botData)
+        public override Task Debug(BotData botData, StringBuilder stringBuilder)
         {
-            Console.ForegroundColor = ConsoleColor.DarkYellow;
-            Console.WriteLine("[--- Executing Block EXTRACTOR ---]");
+            stringBuilder.AppendLine("[orange3]<--- Executing EXTRACTOR --->[/]");
 
             var result = _extractorFunctions[_extractor.Type].Invoke(ReplaceValues(_extractor.Source, botData));
 
@@ -62,20 +62,14 @@ namespace Kraken.Blocks
                 if (!string.IsNullOrEmpty(result))
                 {
                     botData.Captures[_extractor.Name] = result;
-
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine($"Extracted variable | Name: {_extractor.Name} | Value: {result} | Capture: {_extractor.Capture}");
+                    stringBuilder.AppendLine($"[red3_1]Extracted variable | Name: {_extractor.Name} | Value: {result} | Capture: {_extractor.Capture}[/]");
                 }
             }
             else
             {
                 botData.Variables[_extractor.Name] = result;
-
-                Console.ForegroundColor = ConsoleColor.Yellow;
-                Console.WriteLine($"Extracted variable | Name: {_extractor.Name} | Value: {result} | Capture: {_extractor.Capture}");
+                stringBuilder.AppendLine($"[darkorange3_1]Extracted variable | Name: {_extractor.Name} | Value: {result} | Capture: {_extractor.Capture}[/]");
             }
-
-            Console.Write(Environment.NewLine);
 
             return Task.CompletedTask;
         }

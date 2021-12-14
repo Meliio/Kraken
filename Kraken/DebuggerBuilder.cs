@@ -66,8 +66,14 @@ namespace Kraken
             foreach (var item in token.AsEnumerable())
             {
                 var block = JObject.Parse(item.ToString());
-                var blockName = block.Properties().First().Name;
-                blocks.Add(_buildBlockFunctions[blockName].Invoke(block.GetValue(blockName).ToString()));
+                if (block is not null)
+                {
+                    var blockName = block.Properties().First().Name;
+                    if (_buildBlockFunctions.ContainsKey(blockName))
+                    {
+                        blocks.Add(_buildBlockFunctions[blockName].Invoke(block.GetValue(blockName).ToString()));
+                    }
+                }
             }
 
             return blocks;
@@ -77,42 +83,54 @@ namespace Kraken
         {
             var requestBlock = JObject.Parse(json);
 
-            var raw = requestBlock.GetValue("raw");
-
-            var lines = raw.ToString().Trim().Split("\n");
-
-            var firstLineSplit = lines[0].Split(' ');
-
-            var httpMethod = new HttpMethod(firstLineSplit[0]);
-
-            var headers = new Dictionary<string, string>();
-
-            var content = string.Empty;
-
-            foreach (var line in lines.Skip(1))
+            if (requestBlock.TryGetValue("raw", out var raw))
             {
-                if (line.Contains(": "))
+                var lines = raw.ToString().Trim().Split("\n");
+
+                var firstLineSplit = lines[0].Split(' ');
+
+                var httpMethod = new HttpMethod(firstLineSplit[0]);
+
+                var headers = new Dictionary<string, string>();
+
+                var cookieHeader = string.Empty;
+
+                var content = string.Empty;
+
+                foreach (var line in lines.Skip(1))
                 {
                     var headerSplit = line.Split(": ");
 
-                    headers.Add(headerSplit[0], headerSplit[1]);
+                    if (headerSplit.Length == 2)
+                    {
+                        if (headerSplit[0].Equals("Cookie", StringComparison.OrdinalIgnoreCase))
+                        {
+                            cookieHeader = headerSplit[1].Replace(';', ',');
+                        }
+                        else
+                        {
+                            headers.Add(headerSplit[0], headerSplit[1]);
+                        }
+                    }
+                    else
+                    {
+                        content = line;
+                    }
                 }
-                else
+
+                var url = firstLineSplit[1].StartsWith('/') ? $"https://{headers["Host"]}{firstLineSplit[1]}" : firstLineSplit[1];
+
+                if (httpMethod == HttpMethod.Post && !headers.ContainsKey("Content-Type"))
                 {
-                    content = line;
+                    headers.Add("Content-Type", "application/x-www-form-urlencoded");
                 }
+
+                var request = new Request(httpMethod, url, headers, cookieHeader, content, !requestBlock.TryGetValue("redirect", out var redirect) || (bool)redirect, !requestBlock.TryGetValue("loadContent", out var loadContent) || (bool)loadContent);
+
+                return new BlockRequest(request);
             }
 
-            if (httpMethod == HttpMethod.Post && !headers.ContainsKey("Content-Type"))
-            {
-                headers.Add("Content-Type", "application/x-www-form-urlencoded");
-            }
-
-            var url = firstLineSplit[1].StartsWith('/') ? $"https://{headers["Host"]}{firstLineSplit[1]}" : firstLineSplit[1];
-
-            var request = new Request(httpMethod, url, headers, content, !requestBlock.TryGetValue("redirect", out var redirect) || (bool)redirect, !requestBlock.TryGetValue("loadContent", out var loadContent) || (bool)loadContent);
-
-            return new BlockRequest(request);
+            throw new NotImplementedException();
         }
 
         private BlockExtractor BuildBlockExtractor(string json) => new(JsonConvert.DeserializeObject<Extractor>(json));
