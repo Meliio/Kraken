@@ -1,5 +1,4 @@
 ﻿using Kraken.Models;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Kraken.Blocks
@@ -28,7 +27,7 @@ namespace Kraken.Blocks
 
         public abstract Task Run(BotData botData);
 
-        public abstract Task Debug(BotData botData, StringBuilder stringBuilder);
+        public abstract Task Debug(BotData botData);
 
         protected string ReplaceValues(string input, BotData botData)
         {

@@ -9,29 +9,29 @@ namespace Kraken
     [Verb("run")]
     public class RunOptions
     {
-        [Option('c', "config", Required = true)]
+        [Option('c', "config", Required = true, HelpText = "Configuration file.")]
         public string ConfigFile { get; set; } = string.Empty;
 
-        [Option('w', "wordlist", Required = true)]
+        [Option('w', "wordlist", Required = true, HelpText = "File contains a list of words.")]
         public string WordlistFile { get; set; } = string.Empty;
 
-        [Option('p', "proxies")]
+        [Option('p', "proxies", HelpText = "File contains a list of proxy.")]
         public IEnumerable<string> Proxies { get; set; } = Array.Empty<string>();
 
-        [Option('s', "skip", Default = 0)]
+        [Option('s', "skip", Default = 0, HelpText = "Number of lines to skip in the wordlist.")]
         public int Skip { get; set; }
 
-        [Option('b', "bots", Default = 1)]
+        [Option('b', "bots", Default = 1, HelpText = "Number of bots.")]
         public int Bots { get; set; }
 
-        [Option('v', "verbose", Default = false)]
+        [Option('v', "verbose", Default = false, HelpText = "Prints task errors.")]
         public bool Verbose { get; set; }
     }
 
     [Verb("debug")]
     public class DebugOptions
     {
-        [Option('c', "config", Required = true)]
+        [Option('c', "config", Required = true, HelpText = "Configuration file.")]
         public string ConfigFile { get; set; } = string.Empty;
 
         [Option('i', "input")]
@@ -47,9 +47,9 @@ namespace Kraken
 
         public static async Task Main(string[] args)
         {
-            await GenerateSettingsFile();
-
             Console.OutputEncoding = Encoding.UTF8;
+
+            await GenerateSettingsFile();
 
             await Parser.Default.ParseArguments<RunOptions, DebugOptions>(args).MapResult(
                 (RunOptions options) => Run(options),

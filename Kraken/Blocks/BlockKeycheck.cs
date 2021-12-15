@@ -1,7 +1,6 @@
 ﻿using Kraken.Enums;
 using Kraken.Models;
 using Kraken.Models.Blocks;
-using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Kraken.Blocks
@@ -49,9 +48,10 @@ namespace Kraken.Blocks
             return Task.CompletedTask;
         }
 
-        public override Task Debug(BotData botData, StringBuilder stringBuilder)
+        public override Task Debug(BotData botData)
         {
-            stringBuilder.AppendLine("[orange3]<--- Executing KEY CHECK --->[/]");
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            Console.WriteLine("[--- Executing Block KEY CHECK ---]");
 
             var success = false;
 
@@ -76,7 +76,8 @@ namespace Kraken.Blocks
 
                     foreach (var result in results.Where(r => r.Item1))
                     {
-                        stringBuilder.AppendLine($"Found '{keychain.Condition.ToUpper()}' Key {(result.Item4.Length < 30 ? result.Item4.Replace("\n", string.Empty) : $"{result.Item4[..30].Replace("\n", string.Empty)}(...)")} {result.Item3} {result.Item2}");
+                        Console.ForegroundColor = ConsoleColor.White;
+                        Console.WriteLine($"Found '{keychain.Condition.ToUpper()}' Key {(result.Item4.Length < 30 ? result.Item4.Replace("\n", string.Empty) : $"{result.Item4[..30].Replace("\n", string.Empty)}[...]")} {result.Item3} {result.Item2}");
                     }
                 }
             }

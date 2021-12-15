@@ -1,6 +1,5 @@
 ﻿using Kraken.Models;
 using Kraken.Models.Blocks;
-using Spectre.Console;
 using System.Net;
 using System.Text;
 
@@ -84,9 +83,10 @@ namespace Kraken.Blocks
             }
         }
 
-        public override async Task Debug(BotData botData, StringBuilder stringBuilder)
+        public override async Task Debug(BotData botData)
         {
-            stringBuilder.AppendLine("[orange3]<--- Executing Block REQUEST --->[/]");
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            Console.WriteLine("[--- Executing Block REQUEST ---]");
 
             using var requestMessage = new HttpRequestMessage(_request.Method, ReplaceValues(_request.Url, botData));
 
@@ -107,16 +107,17 @@ namespace Kraken.Blocks
                 requestMessage.Content = new StringContent(ReplaceValues(_request.Content, botData), Encoding.UTF8, _request.Headers["Content-Type"]);
             }
 
-            stringBuilder.AppendLine($"[cyan]{requestMessage.Method} {requestMessage.RequestUri.AbsoluteUri}");
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Console.WriteLine($"{requestMessage.Method} {requestMessage.RequestUri.AbsoluteUri}");
 
             if (requestMessage.Headers.Any())
             {
-                stringBuilder.AppendLine(requestMessage.Headers.ToString().TrimEnd());
+                Console.WriteLine(requestMessage.Headers.ToString().TrimEnd());
             }
 
             if (requestMessage.Method == HttpMethod.Post)
             {
-                stringBuilder.AppendLine(await requestMessage.Content.ReadAsStringAsync());
+                Console.WriteLine(await requestMessage.Content.ReadAsStringAsync());
             }
 
             using var responseMessage = await botData.HttpClient.SendAsync(requestMessage);
@@ -166,15 +167,21 @@ namespace Kraken.Blocks
                 botData.Variables["response.content"] = _request.LoadContent ? WebUtility.HtmlDecode(await responseMessage.Content.ReadAsStringAsync()) : string.Empty;
             }
 
-            stringBuilder.AppendLine()
-                .AppendLine($"Address: {botData.Variables["response.address"]}")
-                .AppendLine($"Response code: {botData.Variables["response.statusCode"]}[/]")
-                .AppendLine("[deeppink1_1]Received headers:[/]")
-                .AppendLine($"[palevioletred1]{string.Join(Environment.NewLine, botData.Headers.Select(h => $"{h.Key}: {string.Join(' ', h.Value)}"))}[/]")
-                .AppendLine("[orange1]All cookies:[/]")
-                .AppendLine($"[cornsilk1]{string.Join(Environment.NewLine, botData.CookieContainer.GetAllCookies().Select(c => $"{c.Name}: {c.Value}"))}[/]")
-                .AppendLine("[darkgreen]Response Source:[/]")
-                .AppendLine($"[green]{(_request.LoadContent ? botData.Variables["response.content"].Replace("[", string.Empty).Replace("]", string.Empty) : string.Empty)}[/]");
+            Console.WriteLine();
+            Console.WriteLine($"Address: {botData.Variables["response.address"]}");
+            Console.WriteLine($"Response code: {botData.Variables["response.statusCode"]}");
+            Console.ForegroundColor = ConsoleColor.DarkMagenta;
+            Console.WriteLine("Received headers:");
+            Console.ForegroundColor = ConsoleColor.Magenta;
+            Console.WriteLine(string.Join(Environment.NewLine, botData.Headers.Select(h => $"{h.Key}: {string.Join(' ', h.Value)}")));
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            Console.WriteLine("All cookies:");
+            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.WriteLine(string.Join(Environment.NewLine, botData.CookieContainer.GetAllCookies().Select(c => $"{c.Name}: {c.Value}")));
+            Console.ForegroundColor = ConsoleColor.DarkGreen;
+            Console.WriteLine("Response Source:");
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine(_request.LoadContent ? botData.Variables["response.content"] : string.Empty);
         }
     }
 }

@@ -55,7 +55,6 @@ namespace Kraken
 
             var httpClientManager = _proxy.Any() ? new HttpClientManager(new string[] { _proxy.First() }, _proxy.Count() == 2 ? Enum.Parse<ProxyType>(_proxy.ElementAt(1), true) : ProxyType.Http) : new HttpClientManager();
 
-
             return new Debugger(blocks, botInputs, httpClientManager);
         }
 
