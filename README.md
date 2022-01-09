@@ -47,5 +47,31 @@ open a cmd then write "cd {path where kraken.exe is located}" then "kraken.exe -
 * data.cookie[cookieName]
 * data.source
 
+```
+[SETTINGS]
+{
+   "name":"example.com",
+   "customInputs":[],
+   "inputRules":[]
+}
+
+[SCRIPT]
+REQUEST POST "https://example.com" Redirect=true LoadContent=true
+  CONTENT "username=<input.USER>&password=<input.PASS>"
+  CONTENTTYPE "application/x-www-form-urlencoded"
+  HEADER "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.149 Safari/537.36" 
+  HEADER "Pragma: no-cache" 
+  HEADER "Accept: */*" 
+
+PARSE "<data.Source>" LR "<title>" "</title>" -> VAR "title" 
+
+KEYCHECK 
+  KEYCHAIN Failure OR 
+    KEY "bad key" 
+  KEYCHAIN Success OR 
+    KEY "success key" 
+```
+
+
 ### Debug
 ![debug screen](https://github.com/Meliio/Kraken/blob/main/screen.png)
