@@ -148,6 +148,12 @@ blocks:
 ```yaml
 settings:
   name: example
+  customInputs:
+    - description: The authorization token
+      name: authorizationToken
+  inputRules:
+    - name: input.password
+      regex: ^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$
 blocks:
   - request:
       raw: |
