@@ -3,12 +3,14 @@ using Kraken.Enums;
 using Kraken.Models;
 using LiteDB;
 using Spectre.Console;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Kraken
 {
     public class Checker
     {
+        public CheckerStatus Status { get; set; }
         public CheckerStats Stats { get; }
 
         private readonly ConfigSettings _configSettings;
@@ -26,6 +28,7 @@ namespace Kraken
 
         public Checker(ConfigSettings configSettings, IEnumerable<Block> blocks, IEnumerable<BotInput> botInputs, HttpClientManager httpClientManager, int skip, ParallelOptions parallelOptions, bool verbose, KrakenSettings krakenSettings, Record record)
         {
+            Status = CheckerStatus.Idle;
             Stats = new CheckerStats(botInputs.Count(), record.Progress);
             _configSettings = configSettings;
             _blocks = blocks;
@@ -43,23 +46,37 @@ namespace Kraken
 
         public async Task StartAsync()
         {
+            AnsiConsole.MarkupLine($"[grey]LOG:[/] started at {DateTime.Now}");
+
             _ = StartUpdatingConsoleCheckerStatsAsync();
 
             _ = StartCpmCalculator();
 
             _ = StartUpdatingRecordAsync();
 
-            await AnsiConsole.Status().StartAsync("Progress", async ctx =>
+            Status = CheckerStatus.Running;
+
+            await AnsiConsole.Status().Spinner(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? Spinner.Known.Point : Spinner.Known.Default).StartAsync("Progress", async ctx =>
             {
                 await Parallel.ForEachAsync(_botInputs.Skip(_skip == 0 ? _record.Progress : _skip), _parallelOptions, async (input, _) =>
                 {
+                    while (Status == CheckerStatus.Paused)
+                    {
+                        await Task.Delay(1000, _);
+                    }
+
                     BotData botData = null;
 
-                    for (var attempts = 0; attempts < 5; attempts++)
+                    for (var attempts = 0; attempts < 8; attempts++)
                     {
                         var httpClient = _httpClientManager.GetRandomHttpClient();
 
                         botData = new BotData(input, httpClient);
+
+                        foreach (var customInput in _configSettings.CustomInputs)
+                        {
+                            botData.Variables.Add(customInput.Name, customInput.Value);
+                        }
 
                         foreach (var block in _blocks)
                         {
@@ -155,11 +172,15 @@ namespace Kraken
                     Stats.IncrementChecked();
                 });
             });
+
+            Status = CheckerStatus.Done;
+
+            AnsiConsole.MarkupLine($"[grey]LOG:[/] completed at {DateTime.Now}");
         }
 
         private async Task StartUpdatingConsoleCheckerStatsAsync()
         {
-            var periodicTimer = new PeriodicTimer(TimeSpan.FromSeconds(10));
+            var periodicTimer = new PeriodicTimer(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? TimeSpan.FromMilliseconds(100) : TimeSpan.FromSeconds(10));
 
             var checkerStats = new StringBuilder();
 
@@ -184,7 +205,12 @@ namespace Kraken
                     .Append(" | CPM ")
                     .Append(Stats.Cpm);
 
-                AnsiConsole.MarkupLine($"[grey]LOG:[/] {checkerStats}");
+                Console.Title = checkerStats.ToString();
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    AnsiConsole.MarkupLine($"[grey]LOG:[/] {checkerStats}");
+                }
 
                 checkerStats.Clear();
 
@@ -192,7 +218,7 @@ namespace Kraken
             }
         }
 
-        private string OutputBuilder(BotData botData) => botData.Captures.Any() ? new StringBuilder().Append(botData.Input.ToString()).Append(_krakenSettings.OutputSeparator).AppendJoin(_krakenSettings.OutputSeparator, botData.Captures.Select(c => $"{c.Key} = [silver]{c.Value}[/]")).ToString() : botData.Input.ToString();
+        private string OutputBuilder(BotData botData) => botData.Captures.Any() ? new StringBuilder().Append(botData.Input.ToString()).Append(_krakenSettings.OutputSeparator).AppendJoin(_krakenSettings.OutputSeparator, botData.Captures.Select(c => $"{c.Key} = {c.Value}")).ToString() : botData.Input.ToString();
 
         private async Task AppendOutputToFileAsync(string path, string content)
         {
@@ -234,14 +260,16 @@ namespace Kraken
             {
                 var cpm = 0;
 
-                for (var i = _outputs.Count - 1; i >= 0; i--) 
-                { 
-                    if ((DateTime.Now - _outputs[i].DateTime).TotalSeconds > 60)
+                var outputs = _outputs.OrderByDescending(o => o.DateTime);
+
+                foreach (var output in outputs)
+                {
+                    if ((DateTime.Now - output.DateTime).TotalSeconds > 60)
                     {
                         break;
                     }
 
-                    cpm++; 
+                    cpm++;
                 }
 
                 Stats.Cpm = cpm;

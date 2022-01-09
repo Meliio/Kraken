@@ -2,7 +2,7 @@
 {
     public class Keycheck
     {
-        public IEnumerable<Keychain> Keychains { get; set; } = Array.Empty<Keychain>();
+        public List<Keychain> Keychains { get; set; } = new List<Keychain>();
         public bool BanOnToCheck { get; set; } = true;
     }
 }

@@ -2,7 +2,7 @@
 using Kraken.Models;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
-using System.Text;
+using Spectre.Console;
 
 namespace Kraken
 {
@@ -28,33 +28,24 @@ namespace Kraken
         public bool Verbose { get; set; }
     }
 
-    [Verb("debug")]
-    public class DebugOptions
-    {
-        [Option('c', "config", Required = true, HelpText = "Configuration file.")]
-        public string ConfigFile { get; set; } = string.Empty;
-
-        [Option('i', "input")]
-        public string BotInput { get; set; } = string.Empty;
-
-        [Option('p', "proxy")]
-        public IEnumerable<string> Proxy { get; set; } = Array.Empty<string>();
-    }
-
     public class Program
     {
         private const string settingsFile = "settings.json";
 
         public static async Task Main(string[] args)
         {
-            Console.OutputEncoding = Encoding.UTF8;
+            //var class1 = new Class1();
+            //await class1.Run();
 
-            await GenerateSettingsFile();
 
-            await Parser.Default.ParseArguments<RunOptions, DebugOptions>(args).MapResult(
-                (RunOptions options) => Run(options),
-                (DebugOptions options) => Debug(options),
-                errors => Task.FromResult(0));
+
+
+
+            //await GenerateSettingsFile();
+
+            //await Parser.Default.ParseArguments<RunOptions>(args).WithParsedAsync(Run);
+
+            await Run(new RunOptions() { Bots = 1, ConfigFile = "test.txt", Proxies = new string[] { }, Skip = 0, Verbose = false, WordlistFile = "combos.txt" });
         }
 
         private static async Task GenerateSettingsFile()
@@ -78,14 +69,13 @@ namespace Kraken
         {
             var checker = new CheckerBuilder(runOptions.ConfigFile, runOptions.WordlistFile, runOptions.Proxies, runOptions.Skip, runOptions.Bots, runOptions.Verbose).Build();
 
+            AnsiConsole.MarkupLine("[grey]LOG:[/] checker initialized succesfully");
+
+            var consoleManager = new ConsoleManager(checker);
+
+            _ = consoleManager.StartListeningKeysAsync();
+
             await checker.StartAsync();
-        }
-
-        private static async Task Debug(DebugOptions debugOptions)
-        {
-            var debugger = new DebuggerBuilder(debugOptions.ConfigFile, debugOptions.BotInput, debugOptions.Proxy).Build();
-
-            await debugger.StartAsync();
         }
     }
 }

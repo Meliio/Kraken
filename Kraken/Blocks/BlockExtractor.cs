@@ -33,7 +33,7 @@ namespace Kraken.Blocks
 
         public override Task Run(BotData botData)
         {
-            var result = _extractorFunctions[_extractor.Type].Invoke(ReplaceValues(_extractor.Source, botData));
+            var result = _extractorFunctions[_extractor.Type].Invoke(ReplaceValues(_extractor.Source, botData)).Trim();
 
             if (_extractor.Capture)
             {
@@ -45,32 +45,6 @@ namespace Kraken.Blocks
             else
             {
                 botData.Variables[_extractor.Name] = result;
-            }
-
-            return Task.CompletedTask;
-        }
-
-        public override Task Debug(BotData botData)
-        {
-            Console.ForegroundColor = ConsoleColor.DarkYellow;
-            Console.WriteLine("[--- Executing Block EXTRACTOR ---]");
-
-            var result = _extractorFunctions[_extractor.Type].Invoke(ReplaceValues(_extractor.Source, botData));
-
-            if (_extractor.Capture)
-            {
-                if (!string.IsNullOrEmpty(result))
-                {
-                    botData.Captures[_extractor.Name] = result;
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine($"Extracted variable | Name: {_extractor.Name} | Value: {result}");
-                }
-            }
-            else
-            {
-                botData.Variables[_extractor.Name] = result;
-                Console.ForegroundColor = ConsoleColor.DarkRed;
-                Console.WriteLine($"Extracted variable | Name: {_extractor.Name} | Value: {result}");
             }
 
             return Task.CompletedTask;

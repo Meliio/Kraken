@@ -1,9 +1,7 @@
-﻿using Kraken.Blocks;
-using Kraken.Models;
-using Kraken.Models.Blocks;
+﻿using Kraken.Models;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using YamlDotNet.Serialization;
+using Spectre.Console;
+using System.Text.RegularExpressions;
 using Yove.Proxy;
 
 namespace Kraken
@@ -16,7 +14,7 @@ namespace Kraken
         private readonly int _skip;
         private readonly int _bots;
         private readonly bool _verbose;
-        private readonly Dictionary<string, Func<string, Block>> _buildBlockFunctions;
+        private readonly Dictionary<string, Func<BotInput, InputRule, bool>> _checkInputRuleFunctions;
 
         public CheckerBuilder(string configFile, string wordlistFile, IEnumerable<string> proxies, int skip, int bots, bool verbose)
         {
@@ -26,40 +24,49 @@ namespace Kraken
             _skip = skip;
             _bots = bots;
             _verbose = verbose;
-            _buildBlockFunctions = new Dictionary<string, Func<string, Block>>(StringComparer.OrdinalIgnoreCase)
+            _checkInputRuleFunctions = new Dictionary<string, Func<BotInput, InputRule, bool>>(StringComparer.OrdinalIgnoreCase)
             {
-                { "request", BuildBlockRequest },
-                { "extractor", BuildBlockExtractor },
-                { "keycheck", BuildBlockKeycheck }
+                { "input", CheckInputRule },
+                { "input.user", CheckInputUsernameRule },
+                { "input.pass", CheckInputPasswordRule },
+                { "input.username", CheckInputUsernameRule },
+                { "input.password", CheckInputPasswordRule }
             };
         }
 
         public Checker Build()
         {
-            var stringReader = new StringReader(File.ReadAllText(_configFile));
+            var loliScriptManager = new LoliScriptManager();
 
-            var deserializer = new DeserializerBuilder().Build();
-
-            var yamlObject = deserializer.Deserialize(stringReader);
-
-            var serializer = new SerializerBuilder().JsonCompatible().Build();
-
-            var json = serializer.Serialize(yamlObject);
-
-            var config = JsonConvert.DeserializeObject<JObject>(json);
-
-            var configSettings = config.TryGetValue("settings", out var token) ? JsonConvert.DeserializeObject<ConfigSettings>(token.ToString()) : new ConfigSettings();
-
+            (var configSettings, var blocks) = loliScriptManager.Build(_configFile);
+;
             if (string.IsNullOrEmpty(configSettings.Name))
             {
                 configSettings.Name = Path.GetFileNameWithoutExtension(_configFile);
             }
 
-            var blocks = BuildBlocks(config.GetValue("blocks"));
+            if (configSettings.CustomInputs.Any())
+            {
+                AnsiConsole.Write(new Rule("[darkorange]Custom input[/]").RuleStyle("grey").LeftAligned());
+
+                foreach (var customInput in configSettings.CustomInputs)
+                {
+                    customInput.Value = AnsiConsole.Ask<string>($"{customInput.Description}:");
+                }
+            }
 
             var botInputs = File.ReadAllLines(_wordlistFile).Where(w => !string.IsNullOrEmpty(w)).Select(w => new BotInput(w));
 
-            var httpClientManager = _proxies.Any() ? new HttpClientManager(File.ReadAllLines(_proxies.First()).Where(p => !string.IsNullOrEmpty(p)), _proxies.Count() == 2 ? Enum.Parse<ProxyType>(_proxies.ElementAt(1), true) : ProxyType.Http) : new HttpClientManager();
+            if (configSettings.InputRules.Any())
+            {
+                botInputs = botInputs.Where(b => configSettings.InputRules.All(i => _checkInputRuleFunctions.ContainsKey(i.Name) ? _checkInputRuleFunctions[i.Name].Invoke(b, i) : false));
+            }
+
+            var proxies = _proxies.Any() ? File.ReadAllLines(_proxies.First()).Where(p => !string.IsNullOrEmpty(p)) : Array.Empty<string>();
+            
+            var proxyType = _proxies.Count() == 2 ? Enum.Parse<ProxyType>(proxies.ElementAt(1), true) : ProxyType.Http;
+
+            var httpClientManager = proxies.Any() ? new HttpClientManager(proxies, proxyType) : new HttpClientManager();
 
             var parallelOptions = new ParallelOptions()
             {
@@ -75,83 +82,11 @@ namespace Kraken
             return new Checker(configSettings, blocks, botInputs, httpClientManager, _skip, parallelOptions, _verbose, krakenSettings, record);
         }
 
-        private IEnumerable<Block> BuildBlocks(JToken token)
-        {
-            var blocks = new List<Block>();
+        private bool CheckInputRule(BotInput botInput, InputRule inputRule) => Regex.IsMatch(botInput.ToString(), inputRule.Regex);
 
-            foreach (var item in token.AsEnumerable())
-            {
-                var block = JObject.Parse(item.ToString());
-                if (block is not null)
-                {
-                    var blockName = block.Properties().First().Name;
-                    if (_buildBlockFunctions.ContainsKey(blockName))
-                    {
-                        blocks.Add(_buildBlockFunctions[blockName].Invoke(block.GetValue(blockName).ToString()));
-                    }
-                }
-            }
+        private bool CheckInputUsernameRule(BotInput botInput, InputRule inputRule) => Regex.IsMatch(botInput.Combo.Username, inputRule.Regex);
 
-            return blocks;
-        }
-
-        private BlockRequest BuildBlockRequest(string json)
-        {
-            var requestBlock = JObject.Parse(json);
-
-            if (requestBlock.TryGetValue("raw", out var raw))
-            {
-                var lines = raw.ToString().Trim().Split("\n");
-
-                var firstLineSplit = lines[0].Split(' ');
-
-                var httpMethod = new HttpMethod(firstLineSplit[0]);
-
-                var headers = new Dictionary<string, string>();
-
-                var cookieHeader = string.Empty;
-
-                var content = string.Empty;
-
-                foreach (var line in lines.Skip(1))
-                {
-                    var headerSplit = line.Split(": ");
-
-                    if (headerSplit.Length == 2)
-                    {
-                        if (headerSplit[0].Equals("Cookie", StringComparison.OrdinalIgnoreCase))
-                        {
-                            cookieHeader = headerSplit[1].Replace(';', ',');
-                        }
-                        else
-                        {
-                            headers.Add(headerSplit[0], headerSplit[1]);
-                        }
-                    }
-                    else
-                    {
-                        content = line;
-                    }
-                }
-
-                var url = firstLineSplit[1].StartsWith('/') ? $"https://{headers["Host"]}{firstLineSplit[1]}" : firstLineSplit[1];
-
-                if (httpMethod == HttpMethod.Post && !headers.ContainsKey("Content-Type"))
-                {
-                    headers.Add("Content-Type", "application/x-www-form-urlencoded");
-                }
-
-                var request = new Request(httpMethod, url, headers, cookieHeader, content, !requestBlock.TryGetValue("redirect", out var redirect) || (bool)redirect, !requestBlock.TryGetValue("loadContent", out var loadContent) || (bool)loadContent);
-
-                return new BlockRequest(request);
-            }
-
-            throw new NotImplementedException();
-        }
-
-        private BlockExtractor BuildBlockExtractor(string json) => new(JsonConvert.DeserializeObject<Extractor>(json));
-
-        private BlockKeycheck BuildBlockKeycheck(string json) => new(JsonConvert.DeserializeObject<Keycheck>(json));
+        private bool CheckInputPasswordRule(BotInput botInput, InputRule inputRule) => Regex.IsMatch(botInput.Combo.Password, inputRule.Regex);
 
         private Record GetRecord(string configName)
         {

@@ -6,19 +6,20 @@ namespace Kraken
 {
     public class HttpClientManager
     {
-        private readonly CustomHttpClient[] _httpClients;
+        private readonly List<CustomHttpClient> _httpClients;
         private readonly Random _random;
 
         public HttpClientManager()
         {
-            var httpClientHandler = BuildHttpClientHandler();
+            var httpClient = new CustomHttpClient(BuildHttpClientHandler())
+            {
+                Timeout = TimeSpan.FromSeconds(15)
+            };;
 
-            var httpClient = new CustomHttpClient(httpClientHandler)
-            { 
-                Timeout = TimeSpan.FromSeconds(10) 
+            _httpClients = new List<CustomHttpClient>()
+            {
+                httpClient
             };
-
-            _httpClients = new CustomHttpClient[] { httpClient };
             _random = new Random();
         }
 
@@ -30,10 +31,10 @@ namespace Kraken
 
             var httpClients = httpClientHandlers.Select(h => new CustomHttpClient(h)
             {
-                Timeout = TimeSpan.FromSeconds(10)
+                Timeout = TimeSpan.FromSeconds(15),
             });
 
-            _httpClients = httpClients.ToArray();
+            _httpClients = new List<CustomHttpClient>(httpClients);
             _random = new Random();
         }
 
@@ -48,12 +49,9 @@ namespace Kraken
                     return httpClients.ElementAt(_random.Next(httpClients.Count()));
                 }
 
-                foreach (var httpClient in _httpClients)
-                {
-                    httpClient.IsValid = true;
-                }
+                _httpClients.ForEach(h => h.IsValid = true);
 
-                return _httpClients[_random.Next(_httpClients.Length)];
+                return _httpClients[_random.Next(_httpClients.Count)];
             }
         }
 
@@ -76,7 +74,7 @@ namespace Kraken
             AllowAutoRedirect = false,
             AutomaticDecompression = DecompressionMethods.All,
             Proxy = proxyClient,
-            UseCookies = false,         
+            UseCookies = false    
         };
     }
 }

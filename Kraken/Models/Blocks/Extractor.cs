@@ -8,10 +8,10 @@
         public string Right { get; set; } = string.Empty;
         public string Json { get; set; } = string.Empty;
         public string Selector { get; set; } = string.Empty;
-        public string Attribute { get; set; } = "innerHTML";
+        public string Attribute { get; set; } = string.Empty;
         public string Regex { get; set; } = string.Empty;
-        public string Group { get; set; } = "1";
-        public string Source { get; set; } = "<response.content>";
+        public string Group { get; set; } = string.Empty;
+        public string Source { get; set; } = string.Empty;
         public bool Capture { get; set; }
     }
 }

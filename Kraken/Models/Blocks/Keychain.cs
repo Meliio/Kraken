@@ -2,8 +2,8 @@
 {
     public class Keychain
     {
-        public string Status { get; set; } = "failure";
-        public string Condition { get; set; } = "or";
-        public IEnumerable<Key> Keys { get; set; } = Array.Empty<Key>();
+        public string Status { get; set; } = string.Empty;
+        public string Condition { get; set; } = string.Empty;
+        public List<Key> Keys { get; set; } = new List<Key>();
     }
 }

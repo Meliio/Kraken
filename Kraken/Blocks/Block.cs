@@ -10,7 +10,7 @@ namespace Kraken.Blocks
 
         public Block()
         {
-            _regex = new Regex(@"<(.*?)(?:\[(.*?)\])?>", RegexOptions.Compiled);
+            _regex = new Regex(@"<([^ ].+?)(?:\[([^ ].+?)\])?>", RegexOptions.Compiled);
             _replaceFunctions = new Dictionary<string, Func<string, Match, BotData, string>>(StringComparer.OrdinalIgnoreCase)
             {
                 { "input", ReplaceWithInput },
@@ -18,16 +18,14 @@ namespace Kraken.Blocks
                 { "input.pass", ReplaceWithInputPassword },
                 { "input.username", ReplaceWithInputUsername },
                 { "input.password", ReplaceWithInputPassword },
-                { "response.headers", ReplaceWithResponseHeaders },
-                { "response.cookies", ReplaceWithResponseCookies },
-                { "response.header", ReplaceWithResponseHeaderValue },
-                { "response.cookie", ReplaceWithResponseCookieValue }
+                { "data.headers", ReplaceWithResponseHeaders },
+                { "data.cookies", ReplaceWithResponseCookies },
+                { "data.header", ReplaceWithResponseHeaderValue },
+                { "data.cookie", ReplaceWithResponseCookieValue }
             };
         }
 
         public abstract Task Run(BotData botData);
-
-        public abstract Task Debug(BotData botData);
 
         protected string ReplaceValues(string input, BotData botData)
         {
