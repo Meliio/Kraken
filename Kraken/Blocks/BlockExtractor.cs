@@ -50,6 +50,35 @@ namespace Kraken.Blocks
             return Task.CompletedTask;
         }
 
+        public override Task Debug(BotData botData)
+        {
+            Console.ForegroundColor = ConsoleColor.DarkYellow;
+            Console.WriteLine("[--- Executing Block EXTRACTOR ---]");
+
+            var result = _extractorFunctions[_extractor.Type].Invoke(ReplaceValues(_extractor.Source, botData));
+
+            if (_extractor.Capture)
+            {
+                if (!string.IsNullOrEmpty(result))
+                {
+                    botData.Captures[_extractor.Name] = result;
+                }
+
+                Console.ForegroundColor = ConsoleColor.Yellow;
+                Console.WriteLine($"Extracted variable | Name: {_extractor.Name} | Value: {result}");
+            }
+            else
+            {
+                botData.Variables[_extractor.Name] = result;
+                Console.ForegroundColor = ConsoleColor.DarkRed;
+                Console.WriteLine($"Extracted variable | Name: {_extractor.Name} | Value: {result}");
+            }
+
+            Console.WriteLine();
+
+            return Task.CompletedTask;
+        }
+
         private string LeftRightExtractor(string source)
         {
             var indexOfBegin = source.IndexOf(_extractor.Left);
